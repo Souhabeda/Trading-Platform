@@ -1,192 +1,309 @@
+"use client"
+
+import { useEffect, useState } from 'react'
 import { Menu } from '@headlessui/react'
 import dynamic from 'next/dynamic'
 import Link from "next/link"
 import MainMenu from '../Menu'
 import MobileMenu from '../MobileMenu'
+import { useRouter } from 'next/navigation'
+import moment from "moment";
+
 const ThemeSwitch = dynamic(() => import('@/components/elements/ThemeSwitch'), {
     ssr: false,
 })
-export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
-    return (
-        <>
 
-            <header id="header_main" className={`header ${scroll ? "is-fixed is-small" : ""}`}>
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-12">
-                            <div className="header__body d-flex justify-content-between">
-                                <div className="header__left">
-                                    <div className="logo">
-                                        <Link className="light" href="/">
-                                            <img src="/assets/images/logo/logo.png" alt="" width={118} height={32} data-retina="assets/images/logo/logo@2x.png" data-width={118} data-height={32} />
-                                        </Link>
-                                        <Link className="dark" href="/">
-                                            <img src="/assets/images/logo/logo-dark.png" alt="" width={118} height={32} data-retina="assets/images/logo/logo-dark@2x.png" data-width={118} data-height={32} />
-                                        </Link>
-                                    </div>
-                                    <div className="left__main">
-                                        <div className="d-none d-lg-block">
-                                            <nav id="main-nav" className="main-nav">
-                                                <MainMenu />
-                                            </nav>
-                                            {/* #main-nav */}
-                                        </div>
+export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const [lastLogin, setLastLogin] = useState(null)
+    const [notifications, setNotifications] = useState([]);
+    const [hasNewNotification, setHasNewNotification] = useState(false);
+
+    const router = useRouter()
+
+    useEffect(() => {
+        const token = localStorage.getItem("token")
+        const lastLoginStored = localStorage.getItem("lastLogin")
+        setIsAuthenticated(!!token)
+        console.log("lastLogin from storage:", lastLoginStored) // 🐞
+        if (lastLoginStored) {
+            setLastLogin(lastLoginStored)
+        }
+    }, [])
+
+    useEffect(() => {
+        // Fonction de polling pour récupérer les nouvelles actualités
+        const fetchNewArticles = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/news/update`, {
+                    method: "POST",
+                });
+                const data = await res.json();
+
+                if (data.new_articles && data.new_articles.length > 0) {
+                    const newNotif = { message: `➕ ${data.added} new Kitco news updates are now available.` };
+                    setNotifications(prev => [...prev, newNotif]);
+                    setHasNewNotification(true);
+                }
+            } catch (error) {
+                console.error("Error fetching new articles:", error);
+            }
+        };
+
+
+        // Appel de la fonction au lancement
+        fetchNewArticles();
+
+        // Polling toutes les 30 secondes
+        const intervalId = setInterval(fetchNewArticles, 30000);
+
+        return () => clearInterval(intervalId); // Nettoyer l'intervalle quand le composant est démonté
+    }, [notifications]);  // Ajoute `notifications` dans les dépendances
+
+    const handleLogout = (e) => {
+        e.preventDefault()
+        localStorage.removeItem('token')
+        localStorage.removeItem('lastLogin')
+        setIsAuthenticated(false)
+        router.push('/login')
+        router.refresh()
+    }
+
+
+    return (
+        <header id="header_main" className={`header ${scroll ? "is-fixed is-small" : ""}`}>
+            <div className="container-fluid">
+                <div className="row">
+                    <div className="col-12">
+                        <div className="header__body d-flex justify-content-between">
+                            <div className="header__left">
+                                <div className="logo">
+                                    <Link className="light" href="/">
+                                        <img src="/assets/images/logo/logo.png" alt="logo" width={118} height={32} />
+                                    </Link>
+                                    <Link className="dark" href="/">
+                                        <img src="/assets/images/logo/logo-dark.png" alt="logo dark" width={118} height={32} />
+                                    </Link>
+                                </div>
+                                <div className="left__main">
+                                    <div className="d-none d-lg-block">
+                                        <nav id="main-nav" className="main-nav">
+                                            <MainMenu />
+                                        </nav>
                                     </div>
                                 </div>
-                                <div className="header__right">
-                                    <Menu as="div" className="dropdown">
-                                        <Menu.Button className="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            Assets
-                                        </Menu.Button>
-                                        <Menu.Items as="div" className="dropdown-menu show" aria-labelledby="dropdownMenuButton">
-                                            <Link className="dropdown-item" href="#">Binance Visa Card</Link>
-                                            <Link className="dropdown-item" href="#">Crypto Loans</Link>
-                                            <Link className="dropdown-item" href="#">Binance Pay</Link>
-                                        </Menu.Items>
-                                    </Menu>
-                                    <Menu as="div" className="dropdown">
-                                        <Menu.Button className="btn dropdown-toggle" type="button" id="dropdownMenuButton1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            Orders &amp; Trades
-                                        </Menu.Button>
-                                        <Menu.Items as="div" className="dropdown-menu show" aria-labelledby="dropdownMenuButton1">
-                                            <Link className="dropdown-item" href="#">Binance Convert</Link>
-                                            <Link className="dropdown-item" href="#">Spot</Link>
-                                            <Link className="dropdown-item" href="#">Margin</Link>
-                                            <Link className="dropdown-item" href="#">P2P</Link>
-                                        </Menu.Items>
-                                    </Menu>
-                                    <Menu as="div" className="dropdown">
-                                        <Menu.Button className="btn dropdown-toggle" type="button" id="dropdownMenuButton2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            EN/USD
-                                        </Menu.Button>
-                                        <Menu.Items as="div" className="dropdown-menu show" aria-labelledby="dropdownMenuButton2">
-                                            <Link href="#" className="dropdown-item notify-item language" data-lang="en">
-                                                <img src="/assets/images/flags/us.jpg" alt="user-image" className="me-1" height={12} />
-                                                <span className="align-middle">English</span>
-                                            </Link>
-                                            <Link href="#" className="dropdown-item notify-item language" data-lang="sp">
-                                                <img src="/assets/images/flags/spain.jpg" alt="user-image" className="me-1" height={12} />
-                                                <span className="align-middle">Spanish</span>
-                                            </Link>
-                                            <Link href="#" className="dropdown-item notify-item language" data-lang="gr">
-                                                <img src="/assets/images/flags/germany.jpg" alt="user-image" className="me-1" height={12} />
-                                                <span className="align-middle">German</span>
-                                            </Link>
-                                            <Link href="#" className="dropdown-item notify-item language" data-lang="it">
-                                                <img src="/assets/images/flags/italy.jpg" alt="user-image" className="me-1" height={12} />
-                                                <span className="align-middle">Italian</span>
-                                            </Link>
-                                            <Link href="#" className="dropdown-item notify-item language" data-lang="ru">
-                                                <img src="/assets/images/flags/russia.jpg" alt="user-image" className="me-1" height={12} />
-                                                <span className="align-middle">Russian</span>
-                                            </Link>
-                                        </Menu.Items>
-                                    </Menu>
-                                    <ThemeSwitch />
-                                    <Menu as="div" className="dropdown notification">
-                                        <Menu.Button className="btn dropdown-toggle" type="button" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            <span className="icon-notification" />
-                                        </Menu.Button>
-                                        <Menu.Items as="div" className="dropdown-menu show" aria-labelledby="dropdownMenuButton3">
-                                            <div className="dropdown-item">
-                                                <div className="media server-log">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="feather feather-server">
-                                                        <rect x={2} y={2} width={20} height={8} rx={2} ry={2} />
-                                                        <rect x={2} y={14} width={20} height={8} rx={2} ry={2} />
-                                                        <line x1={6} y1={6} x2={6} y2={6} />
-                                                        <line x1={6} y1={18} x2={6} y2={18} />
-                                                    </svg>
-                                                    <div className="media-body">
-                                                        <div className="data-info">
-                                                            <h6 >Server Rebooted</h6>
-                                                            <p >45 min ago</p>
-                                                        </div>
-                                                        <div className="icon-status">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="feather feather-x">
-                                                                <line x1={18} y1={6} x2={6} y2={18} />
-                                                                <line x1={6} y1={6} x2={18} y2={18} />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="dropdown-item">
-                                                <div className="media">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="feather feather-heart">
-                                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
-                                                        </path>
-                                                    </svg>
-                                                    <div className="media-body">
-                                                        <div className="data-info">
-                                                            <h6 >Licence Expiring Soon</h6>
-                                                            <p >8 hrs ago</p>
-                                                        </div>
-                                                        <div className="icon-status">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="feather feather-x">
-                                                                <line x1={18} y1={6} x2={6} y2={18} />
-                                                                <line x1={6} y1={6} x2={18} y2={18} />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="dropdown-item">
-                                                <div className="media file-upload">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="feather feather-file-text">
-                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
-                                                        </path>
-                                                        <polyline points="14 2 14 8 20 8" />
-                                                        <line x1={16} y1={13} x2={8} y2={13} />
-                                                        <line x1={16} y1={17} x2={8} y2={17} />
-                                                        <polyline points="10 9 9 9 8 9" />
-                                                    </svg>
-                                                    <div className="media-body">
-                                                        <div className="data-info">
-                                                            <h6 >Kelly Portfolio.pdf</h6>
-                                                            <p >670 kb</p>
-                                                        </div>
-                                                        <div className="icon-status">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="feather feather-check">
-                                                                <polyline points="20 6 9 17 4 12" />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </Menu.Items>
-                                    </Menu>
-                                    <div className="d-block d-lg-none">
-                                        <div className={`mobile-button d-block ${isMobileMenu ? "active" : ""}`} onClick={handleMobileMenu}><span /></div>{/* /.mobile-button */}
+                            </div>
+
+                            <div className="header__right">
+                                <ThemeSwitch />
+                                <div className="d-none d-lg-flex items-center">
+                                    {/* <Menu as="div" className="menu-container">
+                                    <div>
+                                        <Menu.Button className="menu-button">Assets</Menu.Button>
                                     </div>
-                                    <div className="wallet">
-                                        <Link href="/user-profile">  <img id="blah" className="wallet-user-profile" src="/assets/images/avt/avt.png" alt="no file" /> </Link>
+                                    <Menu.Items className="menu-items">
+                                        <div className="menu-divider">
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                        Binance Visa Card
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                        Crypto Loans
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                        Binance Pay
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                        </div>
+                                    </Menu.Items>
+                                </Menu> */}
+
+                                    {/* Orders & Trades Dropdown */}
+                                    {/* <Menu as="div" className="menu-container">
+                                    <div>
+                                        <Menu.Button className="menu-button">Orders & Trades</Menu.Button>
                                     </div>
-                                    <Menu as="div" className="dropdown user">
-                                        <Menu.Button className="btn dropdown-toggle" type="button" id="dropdownMenuButton4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            <img src="/assets/images/avt/avt-01.jpg" alt="" />
-                                        </Menu.Button>
-                                        <Menu.Items as="div" className="dropdown-menu show" aria-labelledby="dropdownMenuButton4">
-                                            <Link className="dropdown-item" href="#"><i className="bx bx-user font-size-16 align-middle me-1" />
-                                                <span>Profile</span></Link>
-                                            <Link className="dropdown-item" href="#"><i className="bx bx-wallet font-size-16 align-middle me-1" />
-                                                <span>My Wallet</span></Link>
-                                            <Link className="dropdown-item d-block" href="#"><span className="badge bg-success float-end">11</span><i className="bx bx-wrench font-size-16 align-middle me-1" />
-                                                <span>Settings</span></Link>
-                                            <Link className="dropdown-item" href="#"><i className="bx bx-lock-open font-size-16 align-middle me-1" />
-                                                <span>Lock screen</span></Link>
-                                            <div className="dropdown-divider" />
-                                            <Link className="dropdown-item text-danger" href="/user-login"><i className="bx bx-power-off font-size-16 align-middle me-1 text-danger" />
-                                                <span>Logout</span></Link>
+                                    <Menu.Items className="menu-items">
+                                        <div className="menu-divider">
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                        Binance Convert
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                        Spot
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                        Margin
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                        P2P
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                        </div>
+                                    </Menu.Items>
+                                </Menu> */}
+
+                                    {/* Language Dropdown */}
+                                    <Menu as="div" className="menu-container">
+                                        <div>
+                                            <Menu.Button className="menu-button">EN/USD</Menu.Button>
+                                        </div>
+                                        <Menu.Items className="menu-items">
+                                            <div className="menu-divider">
+                                                {[
+                                                    { src: "/assets/images/flags/us.jpg", label: "English" },
+                                                    { src: "/assets/images/flags/spain.jpg", label: "Spanish" },
+                                                    { src: "/assets/images/flags/germany.jpg", label: "German" },
+                                                    { src: "/assets/images/flags/italy.jpg", label: "Italian" },
+                                                    { src: "/assets/images/flags/russia.jpg", label: "Russian" }
+                                                ].map((lang, index) => (
+                                                    <Menu.Item key={index}>
+                                                        {({ active }) => (
+                                                            <Link href="#" className={`menu-link language ${active ? 'active' : ''}`}>
+                                                                <img src={lang.src} alt={lang.label} height={12} />
+                                                                <span>{lang.label}</span>
+                                                            </Link>
+                                                        )}
+                                                    </Menu.Item>
+                                                ))}
+                                            </div>
                                         </Menu.Items>
                                     </Menu>
-                                </div> 
+
+                                    {/* Notification Dropdown */}
+                                    <Menu as="div" className="menu-container">
+                                        <div>
+                                            <Menu.Button className="menu-button relative">
+                                                <span className="icon-notification" />
+                                                {hasNewNotification && (
+                                                <span className="notif-indicator"></span>
+                                                )}
+                                            </Menu.Button>
+                                        </div>
+                                        <Menu.Items className="menu-items">
+                                            <div className="menu-divider">
+                                                {/* Notifications News — affichée uniquement s'il y en a */}
+                                                {notifications.length > 0 && (
+                                                    <Menu.Item>
+                                                        {({ active }) => (
+                                                            <div className="menu-link server-log">
+                                                                <div className="data-info">
+                                                                    <h6>News Updates</h6>
+                                                                    {notifications.map((notif, index) => (
+                                                                        <p key={index}>{notif.message}</p>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </Menu.Item>
+                                                )}
+
+                                                {/* Server Rebooted */}
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <div className="menu-link server-log">
+                                                            <span>🖥️</span>
+                                                            <div className="data-info">
+                                                                <h6>Server Rebooted</h6>
+                                                                <p>
+                                                                    {lastLogin
+                                                                        ? moment(lastLogin).fromNow()
+                                                                        : "Inconnu"}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </Menu.Item>
+                                            </div>
+                                        </Menu.Items>
+                                    </Menu>
+                                </div>
+                                {/* Wallet and User Dropdown */}
+                                {isAuthenticated && (
+                                    <>
+                                        <Menu as="div" className="menu-container">
+                                            <div className="wallet">
+                                                <Menu.Button className="menu-button img">
+                                                    <img id="blah" className="wallet-user-profile" src="/assets/images/avt/avt.png" alt="user avatar" />
+                                                    <span className="status-indicator"></span>
+                                                </Menu.Button>
+                                            </div>
+                                            <Menu.Items className="menu-items">
+                                                <div className="menu-divider">
+                                                    <Menu.Item>
+                                                        {({ active }) => (
+                                                            <Link href="/user-profile" className={`menu-link ${active ? 'active' : ''}`}>
+                                                                <i className="bx bx-user" />
+                                                                <span>Profile</span>
+                                                            </Link>
+                                                        )}
+                                                    </Menu.Item>
+                                                    <Menu.Item>
+                                                        {({ active }) => (
+                                                            <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                                <i className="bx bx-wallet" />
+                                                                <span>My Wallet</span>
+                                                            </Link>
+                                                        )}
+                                                    </Menu.Item>
+                                                    {/* <Menu.Item>
+                                                        {({ active }) => (
+                                                            <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                                <i className="bx bx-wrench" />
+                                                                <span>Settings</span>
+                                                            </Link>
+                                                        )}
+                                                    </Menu.Item> */}
+                                                    <div className="menu-divider" />
+                                                    <Menu.Item>
+                                                        {({ active }) => (
+                                                            <Link href="/login" className={`menu-link text-danger ${active ? 'active' : ''}`} onClick={handleLogout}>
+                                                                <i className="bx bx-power-off" />
+                                                                <span>Logout</span>
+                                                            </Link>
+                                                        )}
+                                                    </Menu.Item>
+                                                </div>
+                                            </Menu.Items>
+                                        </Menu>
+                                    </>
+                                )}
+                                <div className="d-block d-lg-none">
+                                    <div className={`mobile-button d-block ${isMobileMenu ? "active" : ""}`} onClick={handleMobileMenu}>
+                                        <span />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <MobileMenu isMobileMenu={isMobileMenu} />
-            </header>
+            </div>
 
-        </>
+            <MobileMenu isMobileMenu={isMobileMenu} />
+        </header>
     )
 }

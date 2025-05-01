@@ -15,7 +15,6 @@ const swiperOptions = {
 export default function About1() {
     return (
         <>
-
             <section className="about">
                 <div className="container">
                     <div className="row">

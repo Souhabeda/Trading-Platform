@@ -3,9 +3,10 @@ import About1 from "@/components/sections/About1"
 import Banner1 from "@/components/sections/Banner1"
 import Coinlist1 from "@/components/sections/Coinlist1"
 import Crypto1 from "@/components/sections/Crypto1"
-
 import Testimonials1 from "@/components/sections/Testimonials1"
 import Work1 from "@/components/sections/Work1"
+
+
 export default function Home() {
 
     return (
@@ -18,7 +19,6 @@ export default function Home() {
                 <Work1 />
                 <About1 />
                 <Testimonials1 />
-        
             </Layout>
         </>
     )

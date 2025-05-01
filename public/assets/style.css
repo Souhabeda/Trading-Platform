@@ -43,7 +43,7 @@
 }
 .icon-smartphone:before {
   content: "\e932";
-  color: #3772ff;
+  color: #fcd535;
 }
 .icon-star-active:before {
   content: "\e928";
@@ -54,18 +54,18 @@
 }
 .icon-bit:before {
   content: "\e901";
-  color: #3772ff;
+  color: #fcd535;
 }
 .icon-notification:before {
   content: "\e902";
 }
 .icon-quote:before {
   content: "\e904";
-  color: #3772ff;
+  color: #fcd535;
 }
 .icon-check:before {
   content: "\e905";
-  color: #3772ff;
+  color: #fcd535;
 }
 .icon-avax .path1:before {
   content: "\e906";
@@ -74,7 +74,7 @@
 .icon-avax .path2:before {
   content: "\e907";
   margin-left: -1em;
-  color: rgb(85, 90, 190);
+  color: #fabe3c;
 }
 .icon-avax .path3:before {
   content: "\e908";
@@ -137,7 +137,7 @@
 .icon-sol .path2:before {
   content: "\e914";
   margin-left: -1em;
-  color: rgb(85, 90, 190);
+  color: #fabe3c;
 }
 .icon-sol .path3:before {
   content: "\e915";
@@ -203,7 +203,7 @@
 .icon-eth .path2:before {
   content: "\e923";
   margin-left: -1em;
-  color: rgb(85, 90, 190);
+  color: #fabe3c;
 }
 .icon-eth .path3:before {
   content: "\e924";

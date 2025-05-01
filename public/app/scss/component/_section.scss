@@ -2350,6 +2350,7 @@
           input::-webkit-outer-spin-button,
           input::-webkit-inner-spin-button {
             -webkit-appearance: none;
+            appearance: none;
             margin: 0;
           }
         }
@@ -2795,6 +2796,7 @@
               border-radius: 12px;
               outline: none;
               -webkit-appearance: none;
+              appearance: none;
               background: url("./../../assets/images/icon/arrow-down.png")
                 var(--bg1) no-repeat 73% !important;
               background: var(--bg1);
@@ -3183,9 +3185,6 @@
         }
         td {
           padding: 15px 0.5rem;
-
-          &.number {
-          }
         }
       }
 
@@ -3253,6 +3252,7 @@
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
           -webkit-appearance: none;
+          appearance: none;
           margin: 0;
         }
       }

@@ -2,141 +2,184 @@
 import Layout from "@/components/layout/Layout"
 import Link from "next/link"
 import { useState } from "react"
-export default function Register() {
-    const [flatTabs, setFlatTabs] = useState(1)
-    const handleFlatTabs = (index) => {
-        setFlatTabs(index)
-    }
-    return (
-        <>
+import { useRouter } from "next/navigation"
+import 'react-phone-input-2/lib/style.css'
+import PhoneInput from 'react-phone-input-2'
+import 'react-country-state-city/dist/react-country-state-city.css'
+import { CountrySelect } from 'react-country-state-city'
+import { toast, ToastContainer } from "react-toastify"
+import 'react-toastify/dist/ReactToastify.css'
 
-            <Layout headerStyle={1} footerStyle={2} breadcrumbTitle="Register">
-                <div>
-                    <section className="register">
-                        <div className="container">
-                            <div className="row">
-                                <div className="col-md-12">
-                                    <div className="block-text center">
-                                        <h3 className="heading">Register To Xpero  </h3>
-                                        <p className="desc fs-20">
-                                            Register in advance and enjoy the event benefits
-                                        </p>
-                                    </div>
+export default function Register() {
+    const router = useRouter()
+
+    const [formData, setFormData] = useState({
+        email: "",
+        first_name: "",
+        last_name: "",
+        password: "",
+        re_password: "",
+        username: "",
+        country: "",
+        phone: ""
+    })
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value })
+    }
+
+    const handlePhoneChange = (phone) => {
+        setFormData({ ...formData, phone })
+    }
+
+    const handleCountryChange = (e) => {
+        setFormData({ ...formData, country: e.iso2.toUpperCase() })  // ex: FR, TN
+    }
+
+    const isValidEmail = (email) => {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        return regex.test(email)
+    }
+
+    const isStrongPassword = (password) => {
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/
+        return regex.test(password)
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+
+        // VALIDATION FRONT-END
+        if (!isValidEmail(formData.email)) {
+            toast.error("Format d'email invalide.")
+            return
+        }
+
+        if (!isStrongPassword(formData.password)) {
+            toast.error("Mot de passe faible : 8 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial.")
+            return
+        }
+
+        if (formData.password !== formData.re_password) {
+            toast.error("Les mots de passe ne correspondent pas.")
+            return
+        }
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/signup`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    first_name: formData.first_name,
+                    last_name: formData.last_name,
+                    email: formData.email,
+                    password: formData.password,
+                    re_password: formData.re_password,
+                    country: formData.country,
+                    phone: `+${formData.phone}`
+                })
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                toast.error(data.msg || "Erreur inconnue")
+            } else {
+                toast.success("Inscription réussie ! Redirection en cours...")
+                setFormData({
+                    email: "",
+                    first_name: "",
+                    last_name: "",
+                    password: "",
+                    re_password: "",
+                    username: "",
+                    country: "",
+                    phone: ""
+                })
+                setTimeout(() => {
+                    router.push("/login")
+                }, 2000)
+            }
+
+        } catch (err) {
+            console.error("Erreur réseau :", err)
+            toast.error("Erreur de connexion au serveur.")
+        }
+    }
+
+    return (
+        <Layout headerStyle={1} footerStyle={2} breadcrumbTitle="Register">
+            <ToastContainer />
+            <div>
+                <section className="register">
+                    <div className="container">
+                        <div className="row">
+                            <div className="col-md-12">
+                                <div className="block-text center">
+                                    <h3 className="heading">Register To Xpero</h3>
+                                    <p className="desc fs-20">Register in advance and enjoy the event benefits</p>
                                 </div>
-                                <div className="col-md-12">
-                                    <div className="flat-tabs">
-                                    <ul className="menu-tab">
-                                            <li className={flatTabs === 1 ? "active" : ""} onClick={() => handleFlatTabs(1)}><h6 className="fs-16">Email</h6></li>
-                                            <li className={flatTabs === 2 ? "active" : ""} onClick={() => handleFlatTabs(2)}><h6 className="fs-16">Mobile</h6></li>
-                                        </ul>
-                                        <div className="content-tab">
-                                            <div className="content-inner" style={{ display: `${flatTabs === 1 ? "block" : "none"}` }}>
-                                                <form>
-                                                    <div className="form-group">
-                                                        <label htmlFor="exampleInputEmail1">Email/ID</label>
-                                                        <input type="email" className="form-control" id="exampleInputEmail1" placeholder="Please fill in the email form." />
+                            </div>
+                            <div className="col-md-12">
+                                <div className="flat-tabs">
+                                    <div className="content-tab">
+                                        <div className="content-inner">
+                                            <form onSubmit={handleSubmit}>
+                                                <div className="form-group">
+                                                    <label>Email</label>
+                                                    <input type="email" name="email" className="form-control" value={formData.email} onChange={handleChange} required />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>First Name</label>
+                                                    <input type="text" name="first_name" className="form-control" value={formData.first_name} onChange={handleChange} required />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Last Name</label>
+                                                    <input type="text" name="last_name" className="form-control" value={formData.last_name} onChange={handleChange} required />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Password</label>
+                                                    <input type="password" name="password" className="form-control" value={formData.password} onChange={handleChange} required />
+                                                    <br />
+                                                    <label>Re-enter Password</label>
+                                                    <input type="password" name="re_password" className="form-control" value={formData.re_password} onChange={handleChange} required />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Country</label>
+                                                    <div className="country-horizontal-wrapper">
+                                                        <CountrySelect
+                                                            onChange={handleCountryChange}
+                                                            placeHolder="Select your country"
+                                                            className="country-horizontal"
+                                                        />
                                                     </div>
-                                                    <div className="form-group">
-                                                        <label>Password
-                                                            <span>(8 or more characters, including numbers and special
-                                                                characters)</span></label>
-                                                        <input type="password" className="form-control" placeholder="Please enter a password." />
-                                                        <input type="password" className="form-control" placeholder="Please re-enter your password." />
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>NickName
-                                                            <span className="fs-14">(Excluding special characters)</span></label>
-                                                        <input type="text" className="form-control" placeholder="Enter Email" />
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>Country </label>
-                                                        <select className="form-control">
-                                                            <option>South Korea (+82)</option>
-                                                            <option>Vietnamese (+84)</option>
-                                                            <option>South Korea (+82)</option>
-                                                            <option>South Korea (+82)</option>
-                                                        </select>
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>Phone
-                                                            <span className="fs-14">(Enter numbers only)</span></label>
-                                                        <input type="text" className="form-control" placeholder="ex) 01012345678 (without '-')" />
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>UID Code </label>
-                                                        <input type="text" className="form-control" placeholder="Please enter your invitation code." />
-                                                    </div>
-                                                    <button type="submit" className="btn-action">
-                                                        Pre-Registration
-                                                    </button>
-                                                    <div className="bottom">
-                                                        <p>Already have an account?</p>
-                                                        <Link href="/login">Login</Link>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                            <div className="content-inner" style={{ display: `${flatTabs === 2 ? "block" : "none"}` }}>
-                                                <form>
-                                                    <div className="form-group">
-                                                        <label htmlFor="exampleInputEmail1">Mobile Phone</label>
-                                                        <div>
-                                                            <select className="form-control">
-                                                                <option>+1</option>
-                                                                <option>+84</option>
-                                                                <option>+82</option>
-                                                                <option>+32</option>
-                                                            </select>
-                                                            <input type="text" className="form-control" placeholder="Your Phone number" />
-                                                        </div>
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>Password
-                                                            <span>(8 or more characters, including numbers and special
-                                                                characters)</span></label>
-                                                        <input type="password" className="form-control" placeholder="Please enter a password." />
-                                                        <input type="password" className="form-control" id="exampleInputPassword2" placeholder="Please re-enter your password." />
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>NickName
-                                                            <span className="fs-14">(Excluding special characters)</span></label>
-                                                        <input type="text" className="form-control" placeholder="Enter Email" />
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>Country </label>
-                                                        <select className="form-control" id="exampleFormControlSelect1">
-                                                            <option>South Korea (+82)</option>
-                                                            <option>Vietnamese (+84)</option>
-                                                            <option>South Korea (+82)</option>
-                                                            <option>South Korea (+82)</option>
-                                                        </select>
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>Phone
-                                                            <span className="fs-14">(Enter numbers only)</span></label>
-                                                        <input type="text" className="form-control" placeholder="ex) 01012345678 (without '-')" />
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label>UID Code </label>
-                                                        <input type="text" className="form-control" placeholder="Please enter your invitation code." />
-                                                    </div>
-                                                    <button type="submit" className="btn-action">
-                                                        Pre-Registration
-                                                    </button>
-                                                    <div className="bottom">
-                                                        <p>Already have an account?</p>
-                                                        <Link href="/login">Login</Link>
-                                                    </div>
-                                                </form>
-                                            </div>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Phone</label>
+                                                    <PhoneInput
+                                                        country={'tn'}
+                                                        value={formData.phone}
+                                                        onChange={handlePhoneChange}
+                                                        inputClass="form-control"
+                                                        containerClass="phone-input-container"
+                                                        inputStyle={{ width: '100%', padding: '22px 0 22px 50px' }}
+                                                        dropdownStyle={{ zIndex: 9999 }}
+                                                    />
+                                                </div>
+                                                <button type="submit" className="btn-action">Pre-Registration</button>
+                                                <div className="bottom">
+                                                    <p>Already have an account?</p>
+                                                    <Link href="/login">Login</Link>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </section>
-                </div>
-
-            </Layout>
-        </>
+                    </div>
+                </section>
+            </div>
+        </Layout>
     )
 }
