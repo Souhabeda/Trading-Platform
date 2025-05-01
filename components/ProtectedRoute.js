@@ -29,7 +29,7 @@ export default function ProtectedLayout({ children }) {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/protected`, {
           headers: {
-            "Authorization": token
+            "Authorization": token, "ngrok-skip-browser-warning": "skip" 
           }
         })
 

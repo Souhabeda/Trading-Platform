@@ -24,10 +24,17 @@ export default function Banner1() {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/news`);
+                const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/news`, 
+                    {
+                        headers: {
+                          // Cet en-tête permet de sauter la page d’avertissement Ngrok
+                          "ngrok-skip-browser-warning": "skip"
+                        }
+                    }
+              );
                 const summaries = res.data.map(article => ({
                     summary: article.summary,
-                    sentiment: article.sentiment // Ajouté ici
+                    sentiment: article.sentiment
                 }));
                 setNewsList(summaries);
             } catch (err) {
@@ -35,9 +42,10 @@ export default function Banner1() {
                 setNewsList([{ summary: "Erreur lors de la récupération des actualités.", sentiment: "😐" }]);
             }
         };
-
+    
         fetchNews();
     }, []);
+    
 
     useEffect(() => {
         const interval = setInterval(() => {

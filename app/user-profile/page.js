@@ -35,7 +35,7 @@ export default function UserProfile() {
         if (!token) return
 
         axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
-            headers: { Authorization: token }
+            headers: { Authorization: token, "ngrok-skip-browser-warning": "skip"  }
         })
             .then(res => setUser(res.data.user))
             .catch(err => toast.error(err.response?.data?.msg || "Erreur"))
@@ -47,7 +47,7 @@ export default function UserProfile() {
         setIsSubmitting(true)
         try {
             const res = await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, user, {
-                headers: { Authorization: token }
+                headers: { Authorization: token , "ngrok-skip-browser-warning": "skip" }
             })
             toast.success(res.data.msg || "Profile updated successfully")
         } catch (err) {
@@ -85,7 +85,8 @@ export default function UserProfile() {
         try {
             const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/change-password`, passwordData, {
                 headers: {
-                    Authorization: token
+                    Authorization: token,
+                    "ngrok-skip-browser-warning": "skip" 
                 }
             });
             toast.success(res.data.msg || "Mot de passe changé avec succès");
@@ -117,7 +118,7 @@ export default function UserProfile() {
 
         try {
             const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/delete-account`, {
-                headers: { Authorization: token },
+                headers: { Authorization: token, "ngrok-skip-browser-warning": "skip"  },
                 data: { password } 
             })
             toast.success(res.data.msg || "Compte supprimé avec succès")

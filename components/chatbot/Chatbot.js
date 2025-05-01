@@ -32,7 +32,7 @@ export default function Chatbot () {
 
     const requestOptions = {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "skip"  },
       body: JSON.stringify({ contents: formattedHistory }),
     };
 

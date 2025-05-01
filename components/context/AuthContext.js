@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
       fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
         method: "GET",
         headers: {
-          Authorization: token,
+          Authorization: token, "ngrok-skip-browser-warning": "skip" 
         },
       })
       .then(async (res) => {

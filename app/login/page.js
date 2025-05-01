@@ -24,10 +24,11 @@ export default function Login() {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/login`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "skip"  },
                 body: JSON.stringify({ email, password, remember_me: rememberMe })
             })
 
+            
             const data = await res.json()
 
             if (res.ok) {

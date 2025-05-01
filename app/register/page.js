@@ -68,7 +68,7 @@ export default function Register() {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/signup`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json","ngrok-skip-browser-warning": "skip"  },
                 body: JSON.stringify({
                     first_name: formData.first_name,
                     last_name: formData.last_name,

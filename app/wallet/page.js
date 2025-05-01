@@ -10,7 +10,6 @@ export default function Wallet() {
 
     return (
         <>
-
             <Layout headerStyle={1} footerStyle={2} breadcrumbTitle="Wallet">
                 <div>
                     <section className="wallet buy-crypto flat-tabs">

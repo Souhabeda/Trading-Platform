@@ -64,33 +64,36 @@ export default function Markets() {
 
   useEffect(() => {
     const fetchNews = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forex-news`);
-        const data = await res.json();
-        if (res.ok && data.forex_news) {
-          const formattedNews = data.forex_news.map((item) => {
-            const impactDetails = getImpactDetails(item.Impact);
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forex-news`);
+            const data = await res.json();
 
-            return {
-              id: uuidv4(),
-              text: `[${item.Currency}] ${item.Event} (${item.Date} ${item.Time}) - ${impactDetails.label}`,
-              icon: impactDetails.icon,
-              color: impactDetails.color,
-            };
-          });
-          setNewsItems(formattedNews);
-        } else {
-          console.error(data.error || "Erreur lors de la récupération des news.");
+            if (res.ok && Array.isArray(data.forex_news)) {
+                // Si forex_news est un tableau, on peut le mapper
+                const formattedNews = data.forex_news.map((item) => {
+                    const impactDetails = getImpactDetails(item.Impact);
+
+                    return {
+                        id: uuidv4(),
+                        text: `[${item.Currency}] ${item.Event} (${item.Date} ${item.Time}) - ${impactDetails.label}`,
+                        icon: impactDetails.icon,
+                        color: impactDetails.color,
+                    };
+                });
+                setNewsItems(formattedNews);
+            } else {
+                console.error(data.error || "Erreur: 'forex_news' n'est pas un tableau.");
+            }
+        } catch (error) {
+            console.error("Erreur:", error);
+        } finally {
+            setLoading(false);
         }
-      } catch (error) {
-        console.error("Erreur:", error);
-      } finally {
-        setLoading(false);
-      }
     };
 
     fetchNews();
-  }, []);
+}, []);
+
 
   useEffect(() => {
     if (newsItems.length > 0) {
@@ -112,76 +115,121 @@ export default function Markets() {
     async function fetchOptions() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/settings`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+  
         const data = await res.json();
-        setSymbols(data.symbols || []);
-        setIndicators(data.indicators || []);
-        setTimeframes(data.timeframes || []);
+        console.log("Options reçues du backend:", data);
+  
+        // Vérifie que chaque propriété est bien un tableau
+        const symbolsData = Array.isArray(data.symbols) ? data.symbols : [];
+        const indicatorsData = Array.isArray(data.indicators) ? data.indicators : [];
+        const timeframesData = Array.isArray(data.timeframes) ? data.timeframes : [];
+  
+        setSymbols(symbolsData);
+        setIndicators(indicatorsData);
+        setTimeframes(timeframesData);
       } catch (err) {
         console.error("Failed to fetch options:", err);
         toast.error("Erreur lors du chargement des options.");
       }
     }
+  
     fetchOptions();
   }, []);
+  
 
   const applySettings = async () => {
     if (!pair || !indicator || !timeframe) {
       toast.error("Veuillez remplir tous les champs !");
       return;
     }
-
+  
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/full-analysis`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol: pair, indicator, timeframe }),
-      });
-
-      // Vérification de la réponse HTTP
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/full-analysis`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbol: pair, indicator, timeframe }),
+        }
+      );
+  
+      // 1) Gestion du statut HTTP
       if (!res.ok) {
-        const errorData = await res.json(); // Extraire les données d'erreur envoyées par le serveur
-        throw new Error(errorData.message || "Erreur du serveur"); // Utiliser le message du backend ou un message générique
+        let errorMsg = "Erreur du serveur";
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch {
+          // si le JSON est mal formé
+        }
+        throw new Error(errorMsg);
       }
-
-
+  
+      // 2) Parser le JSON
       const data = await res.json();
-
+  
+      // 3) Cas où le marché est fermé
       if (data.market_status === "closed") {
-        toast.error(data.message);  // Affiche le message du backend si le marché est fermé
-        setSeries([{ data: [] }]);  // Définir une série vide pour ne rien afficher sur le graphique
+        toast.error(data.message || "Marché fermé");
+        setSeries([{ data: [] }]);
         return;
       }
-
-      // Mise à jour des séries pour le graphique
+  
+      // 4) Vérifier et formater les chandeliers
       if (Array.isArray(data.candles)) {
-        const formattedData = data.candles.map(candle => ({
-          x: new Date(candle.Time).getTime(),
-          y: [candle.Open, candle.High, candle.Low, candle.Close],
-        }));
+        const formattedData = data.candles.map((candle) => {
+          // Vérifier que chaque propriété existe et est valide
+          const time = new Date(candle.Time).getTime();
+          const open = parseFloat(candle.Open);
+          const high = parseFloat(candle.High);
+          const low = parseFloat(candle.Low);
+          const close = parseFloat(candle.Close);
+  
+          if (
+            isNaN(time) ||
+            isNaN(open) ||
+            isNaN(high) ||
+            isNaN(low) ||
+            isNaN(close)
+          ) {
+            console.warn("Donnée bougie invalide :", candle);
+            return null; // on filtrera plus bas
+          }
+  
+          return { x: time, y: [open, high, low, close] };
+        })
+        .filter(Boolean); // enlever les nulls
+  
         setSeries([{ data: formattedData }]);
       } else {
         toast.error("Données de chandeliers invalides.");
-        setSeries([{ data: [] }]); // <-- Vide aussi si données invalides
+        setSeries([{ data: [] }]);
         return;
       }
-
-      // Mise à jour des autres données
-      setSignal(data.signal_info?.signal || "N/A");
-      setHeure(data.signal_info?.timestamp || "N/A");
-      setEntryPrice(data.signal_info?.entry || "N/A");
-      setSl(data.signal_info?.stop_loss || "N/A");
-      setTp(data.signal_info?.take_profit || "N/A");
-      setCurrentValue(data.indicator_value);
-      setPrediction(data.trend);
-
+  
+      // 5) Mettre à jour les autres états en protégeant l’accès aux champs
+      const signalInfo = data.signal_info || {};
+      setSignal(signalInfo.signal || "N/A");
+      setHeure(signalInfo.timestamp || "N/A");
+      setEntryPrice(signalInfo.entry || "N/A");
+      setSl(signalInfo.stop_loss || "N/A");
+      setTp(signalInfo.take_profit || "N/A");
+      setCurrentValue(
+        typeof data.indicator_value !== "undefined" ? data.indicator_value : "N/A"
+      );
+      setPrediction(data.trend || "N/A");
+  
       toast.success("Paramètres appliqués avec succès !");
     } catch (error) {
-      setSeries([{ data: [] }]);
-      // Afficher le message d'erreur venant du backend
-      toast.error(error.message || "Erreur lors de l'application des paramètres.");
       console.error("Error applying settings:", error);
+      toast.error(error.message || "Erreur lors de l'application des paramètres.");
+      setSeries([{ data: [] }]);
     }
   };
+  
 
   const handleLstmClick = async () => {
     if (!pair || !timeframe) {
@@ -193,7 +241,7 @@ export default function Markets() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/lstm-prediction`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ symbol: pair, timeframe, indicator })
       });

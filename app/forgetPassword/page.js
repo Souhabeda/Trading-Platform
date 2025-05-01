@@ -22,7 +22,7 @@ export default function ForgetPassword() {
             const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forgetPassword`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ email }),
             })
@@ -30,7 +30,7 @@ export default function ForgetPassword() {
             console.log("Statut HTTP:", res.status)
 
             const data = await res.json()
-            console.log("Réponse du backend :", data)
+ 
 
             if (res.ok) {
                 toast.success(data.msg || "Message envoyé avec succès.")
