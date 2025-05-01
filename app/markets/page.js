@@ -64,36 +64,49 @@ export default function Markets() {
 
   useEffect(() => {
     const fetchNews = async () => {
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forex-news`);
-            const data = await res.json();
-
-            if (res.ok && Array.isArray(data.forex_news)) {
-                // Si forex_news est un tableau, on peut le mapper
-                const formattedNews = data.forex_news.map((item) => {
-                    const impactDetails = getImpactDetails(item.Impact);
-
-                    return {
-                        id: uuidv4(),
-                        text: `[${item.Currency}] ${item.Event} (${item.Date} ${item.Time}) - ${impactDetails.label}`,
-                        icon: impactDetails.icon,
-                        color: impactDetails.color,
-                    };
-                });
-                setNewsItems(formattedNews);
-            } else {
-                console.error(data.error || "Erreur: 'forex_news' n'est pas un tableau.");
-            }
-        } catch (error) {
-            console.error("Erreur:", error);
-        } finally {
-            setLoading(false);
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forex-news`,
+          {
+            headers: { "ngrok-skip-browser-warning": "skip" }
+          }
+        );
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
         }
+  
+        const data = await res.json();
+        console.log("Réponse /forex-news :", data);
+  
+        if (!Array.isArray(data.forex_news)) {
+          console.error("❌ forex_news n'est pas un tableau :", data);
+          setNewsItems([]); 
+          return;
+        }
+  
+        const formattedNews = data.forex_news.map((item) => {
+          const impactDetails = getImpactDetails(item.Impact);
+  
+          return {
+            id: uuidv4(),
+            text: `[${item.Currency}] ${item.Event} (${item.Date} ${item.Time}) - ${impactDetails.label}`,
+            icon: impactDetails.icon,
+            color: impactDetails.color,
+          };
+        });
+  
+        setNewsItems(formattedNews);
+      } catch (error) {
+        console.error("Erreur fetch /forex-news:", error);
+        setNewsItems([]);
+      } finally {
+        setLoading(false);
+      }
     };
-
+  
     fetchNews();
-}, []);
-
+  }, []);
+  
 
   useEffect(() => {
     if (newsItems.length > 0) {
@@ -151,7 +164,7 @@ export default function Markets() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/full-analysis`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "skip" },
           body: JSON.stringify({ symbol: pair, indicator, timeframe }),
         }
       );

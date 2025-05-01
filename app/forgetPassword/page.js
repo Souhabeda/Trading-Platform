@@ -22,7 +22,8 @@ export default function ForgetPassword() {
             const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forgetPassword`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "ngrok-skip-browser-warning": "skip"
                 },
                 body: JSON.stringify({ email }),
             })
