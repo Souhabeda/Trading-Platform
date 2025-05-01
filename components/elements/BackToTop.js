@@ -5,20 +5,28 @@ export default function BackToTop({ target }) {
     const [hasScrolled, setHasScrolled] = useState(false)
 
     useEffect(() => {
-        const onScroll = () => {
-            setHasScrolled(window.scrollY > 100)
-        }
+        // Ce code ne s'exécute que dans le navigateur
+        if (typeof window !== "undefined") {
+            const onScroll = () => {
+                setHasScrolled(window.scrollY > 100);
+            };
 
-        window.addEventListener("scroll", onScroll)
-        return () => window.removeEventListener("scroll", onScroll)
-    }, [])
+            window.addEventListener("scroll", onScroll);
+            return () => window.removeEventListener("scroll", onScroll);
+        }
+    }, []);
 
     const handleClick = () => {
-        window.scrollTo({
-            top: document.querySelector(target).offsetTop,
-            behavior: 'smooth'
-        })
-    }
+        if (typeof window !== "undefined" && typeof document !== "undefined") {
+            const targetElement = document.querySelector(target);
+            if (targetElement) {
+                window.scrollTo({
+                    top: targetElement.offsetTop,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    };
 
     return (
         <>

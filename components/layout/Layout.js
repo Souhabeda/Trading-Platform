@@ -16,14 +16,23 @@ export default function Layout({ breadcrumbTitle, children }) {
     const handleMobileMenu = () => setMobileMenu(!isMobileMenu)
 
     useEffect(() => {
-        AOS.init()
-        document.addEventListener("scroll", () => {
-            const scrollCheck = window.scrollY > 100
-            if (scrollCheck !== scroll) {
-                setScroll(scrollCheck)
-            }
-        })
-    }, [])
+        if (typeof window !== "undefined" && typeof document !== "undefined") {
+            AOS.init();
+    
+            const handleScroll = () => {
+                const scrollCheck = window.scrollY > 100;
+                setScroll((prevScroll) => {
+                    if (scrollCheck !== prevScroll) {
+                        return scrollCheck;
+                    }
+                    return prevScroll;
+                });
+            };
+    
+            document.addEventListener("scroll", handleScroll);
+            return () => document.removeEventListener("scroll", handleScroll);
+        }
+    }, []);
 
     return (
         <>

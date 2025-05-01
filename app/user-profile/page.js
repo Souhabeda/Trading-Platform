@@ -103,6 +103,9 @@ export default function UserProfile() {
 
     // handleDeleteAccount
     const handleDeleteAccount = async () => {
+         // Sécurité côté serveur : s'assurer qu'on est bien dans le navigateur
+        if (typeof window === "undefined") return;
+        
         const confirmed = window.confirm("Es-tu sûr de vouloir supprimer ton compte ? Cette action est irréversible.")
         if (!confirmed) return
 
