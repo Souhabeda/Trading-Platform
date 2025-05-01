@@ -33,9 +33,9 @@ function getImpactDetails(impact) {
 
 
 export default function Markets() {
-  const [symbols, setSymbols] = useState([]);
-  const [indicators, setIndicators] = useState([]);
-  const [timeframes, setTimeframes] = useState([]);
+  const [symbols, setSymbols] = useState("");
+  const [indicators, setIndicators] = useState("");
+  const [timeframes, setTimeframes] = useState("");
 
   const [isLstmModalOpen, setIsLstmModalOpen] = useState(false);
   const [lstmData, setLstmData] = useState(null);
@@ -76,7 +76,6 @@ export default function Markets() {
         }
 
         const data = await res.json();
-        console.log("Réponse /forex-news :", data);
 
         if (!Array.isArray(data.forex_news)) {
           console.error("❌ forex_news n'est pas un tableau :", data);
@@ -127,7 +126,10 @@ export default function Markets() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/settings`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/settings`,
+          {
+            headers: { "ngrok-skip-browser-warning": "skip" }
+          });
         const data = await res.json();
 
         // Vérification de la structure de la réponse
@@ -143,8 +145,6 @@ export default function Markets() {
     };
     fetchOptions();
   }, []);
-
-
 
   const applySettings = async () => {
     if (!pair || !indicator || !timeframe) {
@@ -244,6 +244,7 @@ export default function Markets() {
     }
 
     try {
+      console.log("Sending request to:", `${process.env.NEXT_PUBLIC_BACKEND_URL}/lstm-prediction`);
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/lstm-prediction`, {
         method: "POST",
         headers: {
@@ -251,6 +252,7 @@ export default function Markets() {
         },
         body: JSON.stringify({ symbol: pair, timeframe, indicator })
       });
+      console.log("URL backend:", process.env.NEXT_PUBLIC_BACKEND_URL);
 
       const data = await response.json();
 
@@ -392,8 +394,8 @@ export default function Markets() {
                   <label className="form-label">Currency Pair</label>
                   <select className="form-select" value={pair} onChange={(e) => setPair(e.target.value)}>
                     <option value="">-- Select an Currency Pair --</option>
-                    {symbols.map((symbol) => (
-                      <option key={symbol} value={symbol}>{symbol}</option>
+                    {Array.isArray(symbols) && symbols.map((sym, index) => (
+                      <option key={index} value={sym}>{sym}</option>
                     ))}
                   </select>
                 </div>
@@ -402,8 +404,8 @@ export default function Markets() {
                   <label className="form-label">Indicator</label>
                   <select className="form-select" value={indicator} onChange={(e) => setIndicator(e.target.value)}>
                     <option value="">-- Select an Indicator --</option>
-                    {indicators.map((indicator) => (
-                      <option key={indicator} value={indicator}>{indicator}</option>
+                    {Array.isArray(symbols) && indicators.map((ind, index) => (
+                      <option key={index} value={ind}>{ind}</option>
                     ))}
                   </select>
                 </div>
@@ -412,8 +414,8 @@ export default function Markets() {
                   <label className="form-label">Timeframe</label>
                   <select className="form-select" value={timeframe} onChange={(e) => setTimeframe(e.target.value)}>
                     <option value="">-- Select an Timeframe --</option>
-                    {timeframes.map((timeframe) => (
-                      <option key={timeframe} value={timeframe}>{timeframe}</option>
+                    {Array.isArray(symbols) && timeframes.map((tf, index) => (
+                      <option key={index} value={tf}>{tf}</option>
                     ))}
                   </select>
                 </div>
