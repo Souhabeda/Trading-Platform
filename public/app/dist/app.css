@@ -8097,6 +8097,13 @@ body[data-magic-cursor=hide] .mouse-cursor {
   .apexcharts-legend {
     margin-top: 20px; /* ou plus/moins selon ton besoin */
   }
+
+
+
+
+
+
+
   .is_dark .modal-title{
     color:black;
   }
@@ -8111,3 +8118,4 @@ body[data-magic-cursor=hide] .mouse-cursor {
     color: #FFBB33;
     font-weight: 500;
   }
+  

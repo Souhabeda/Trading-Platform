@@ -74,19 +74,19 @@ export default function Markets() {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
-  
+
         const data = await res.json();
         console.log("Réponse /forex-news :", data);
-  
+
         if (!Array.isArray(data.forex_news)) {
           console.error("❌ forex_news n'est pas un tableau :", data);
-          setNewsItems([]); 
+          setNewsItems([]);
           return;
         }
-  
+
         const formattedNews = data.forex_news.map((item) => {
           const impactDetails = getImpactDetails(item.Impact);
-  
+
           return {
             id: uuidv4(),
             text: `[${item.Currency}] ${item.Event} (${item.Date} ${item.Time}) - ${impactDetails.label}`,
@@ -94,7 +94,7 @@ export default function Markets() {
             color: impactDetails.color,
           };
         });
-  
+
         setNewsItems(formattedNews);
       } catch (error) {
         console.error("Erreur fetch /forex-news:", error);
@@ -103,10 +103,10 @@ export default function Markets() {
         setLoading(false);
       }
     };
-  
+
     fetchNews();
   }, []);
-  
+
 
   useEffect(() => {
     if (newsItems.length > 0) {
@@ -125,40 +125,33 @@ export default function Markets() {
 
 
   useEffect(() => {
-    async function fetchOptions() {
+    const fetchOptions = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/settings`);
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-  
         const data = await res.json();
-        console.log("Options reçues du backend:", data);
-  
-        // Vérifie que chaque propriété est bien un tableau
-        const symbolsData = Array.isArray(data.symbols) ? data.symbols : [];
-        const indicatorsData = Array.isArray(data.indicators) ? data.indicators : [];
-        const timeframesData = Array.isArray(data.timeframes) ? data.timeframes : [];
-  
-        setSymbols(symbolsData);
-        setIndicators(indicatorsData);
-        setTimeframes(timeframesData);
+
+        // Vérification de la structure de la réponse
+        console.log("Réponse /settings:", data);
+
+        setSymbols(data.symbols || []);      // Si symbols est défini, sinon tableau vide
+        setIndicators(data.indicators || []); // Si indicators est défini, sinon tableau vide
+        setTimeframes(data.timeframes || []); // Si timeframes est défini, sinon tableau vide
       } catch (err) {
-        console.error("Failed to fetch options:", err);
+        console.error("Erreur lors du chargement des options:", err);
         toast.error("Erreur lors du chargement des options.");
       }
-    }
-  
+    };
     fetchOptions();
   }, []);
-  
+
+
 
   const applySettings = async () => {
     if (!pair || !indicator || !timeframe) {
       toast.error("Veuillez remplir tous les champs !");
       return;
     }
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/full-analysis`,
@@ -168,7 +161,7 @@ export default function Markets() {
           body: JSON.stringify({ symbol: pair, indicator, timeframe }),
         }
       );
-  
+
       // 1) Gestion du statut HTTP
       if (!res.ok) {
         let errorMsg = "Erreur du serveur";
@@ -180,17 +173,17 @@ export default function Markets() {
         }
         throw new Error(errorMsg);
       }
-  
+
       // 2) Parser le JSON
       const data = await res.json();
-  
+
       // 3) Cas où le marché est fermé
       if (data.market_status === "closed") {
         toast.error(data.message || "Marché fermé");
         setSeries([{ data: [] }]);
         return;
       }
-  
+
       // 4) Vérifier et formater les chandeliers
       if (Array.isArray(data.candles)) {
         const formattedData = data.candles.map((candle) => {
@@ -200,7 +193,7 @@ export default function Markets() {
           const high = parseFloat(candle.High);
           const low = parseFloat(candle.Low);
           const close = parseFloat(candle.Close);
-  
+
           if (
             isNaN(time) ||
             isNaN(open) ||
@@ -211,18 +204,18 @@ export default function Markets() {
             console.warn("Donnée bougie invalide :", candle);
             return null; // on filtrera plus bas
           }
-  
+
           return { x: time, y: [open, high, low, close] };
         })
-        .filter(Boolean); // enlever les nulls
-  
+          .filter(Boolean); // enlever les nulls
+
         setSeries([{ data: formattedData }]);
       } else {
         toast.error("Données de chandeliers invalides.");
         setSeries([{ data: [] }]);
         return;
       }
-  
+
       // 5) Mettre à jour les autres états en protégeant l’accès aux champs
       const signalInfo = data.signal_info || {};
       setSignal(signalInfo.signal || "N/A");
@@ -234,7 +227,7 @@ export default function Markets() {
         typeof data.indicator_value !== "undefined" ? data.indicator_value : "N/A"
       );
       setPrediction(data.trend || "N/A");
-  
+
       toast.success("Paramètres appliqués avec succès !");
     } catch (error) {
       console.error("Error applying settings:", error);
@@ -242,7 +235,7 @@ export default function Markets() {
       setSeries([{ data: [] }]);
     }
   };
-  
+
 
   const handleLstmClick = async () => {
     if (!pair || !timeframe) {
@@ -254,7 +247,7 @@ export default function Markets() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/lstm-prediction`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json", "ngrok-skip-browser-warning": "skip"
         },
         body: JSON.stringify({ symbol: pair, timeframe, indicator })
       });
@@ -399,8 +392,8 @@ export default function Markets() {
                   <label className="form-label">Currency Pair</label>
                   <select className="form-select" value={pair} onChange={(e) => setPair(e.target.value)}>
                     <option value="">-- Select an Currency Pair --</option>
-                    {symbols.map((s, i) => (
-                      <option key={i} value={s}>{s}</option>
+                    {symbols.map((symbol) => (
+                      <option key={symbol} value={symbol}>{symbol}</option>
                     ))}
                   </select>
                 </div>
@@ -409,8 +402,8 @@ export default function Markets() {
                   <label className="form-label">Indicator</label>
                   <select className="form-select" value={indicator} onChange={(e) => setIndicator(e.target.value)}>
                     <option value="">-- Select an Indicator --</option>
-                    {indicators.map((ind, i) => (
-                      <option key={i} value={ind}>{ind}</option>
+                    {indicators.map((indicator) => (
+                      <option key={indicator} value={indicator}>{indicator}</option>
                     ))}
                   </select>
                 </div>
@@ -419,8 +412,8 @@ export default function Markets() {
                   <label className="form-label">Timeframe</label>
                   <select className="form-select" value={timeframe} onChange={(e) => setTimeframe(e.target.value)}>
                     <option value="">-- Select an Timeframe --</option>
-                    {timeframes.map((t, i) => (
-                      <option key={i} value={t}>{t}</option>
+                    {timeframes.map((timeframe) => (
+                      <option key={timeframe} value={timeframe}>{timeframe}</option>
                     ))}
                   </select>
                 </div>
@@ -433,7 +426,7 @@ export default function Markets() {
                   </button>
 
                   {/* Modal Bootstrap */}
-                  {isLstmModalOpen && (
+                  {isLstmModalOpen && lstmData && typeof lstmData === "object" && (
                     <div className="modal fade show d-block" tabIndex="-1" role="dialog" aria-labelledby="lstmModalLabel" aria-hidden="true">
                       <div className="modal-dialog" role="document">
                         <div className="modal-content">

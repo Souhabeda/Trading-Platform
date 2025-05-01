@@ -193,84 +193,86 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                             </div>
                                         </Menu.Items>
                                     </Menu>
-
-                                    {/* Notification Dropdown */}
-                                    <Menu as="div" className="menu-container">
-                                        <div>
-                                            <Menu.Button className="menu-button relative">
-                                                <span className="icon-notification" />
-                                                {hasNewNotification && (
-                                                <span className="notif-indicator"></span>
-                                                )}
-                                            </Menu.Button>
-                                        </div>
-                                        <Menu.Items className="menu-items">
-                                            <div className="menu-divider">
-                                                {/* Notifications News — affichée uniquement s'il y en a */}
-                                                {notifications.length > 0 && (
-                                                    <Menu.Item>
-                                                        {({ active }) => (
-                                                            <div className="menu-link server-log">
-                                                                <div className="data-info">
-                                                                    <h6>News Updates</h6>
-                                                                    {notifications.map((notif, index) => (
-                                                                        <p key={index}>{notif.message}</p>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </Menu.Item>
-                                                )}
-
-                                                {/* Server Rebooted */}
-                                                <Menu.Item>
-                                                    {({ active }) => (
-                                                        <div className="menu-link server-log">
-                                                            <span>🖥️</span>
-                                                            <div className="data-info">
-                                                                <h6>Server Rebooted</h6>
-                                                                <p>
-                                                                    {lastLogin
-                                                                        ? moment(lastLogin).fromNow()
-                                                                        : "Inconnu"}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </Menu.Item>
-                                            </div>
-                                        </Menu.Items>
-                                    </Menu>
                                 </div>
                                 {/* Wallet and User Dropdown */}
                                 {isAuthenticated && (
                                     <>
-                                        <Menu as="div" className="menu-container">
-                                            <div className="wallet">
-                                                <Menu.Button className="menu-button img">
-                                                    <img id="blah" className="wallet-user-profile" src="/assets/images/avt/avt.png" alt="user avatar" />
-                                                    <span className="status-indicator"></span>
-                                                </Menu.Button>
-                                            </div>
-                                            <Menu.Items className="menu-items">
-                                                <div className="menu-divider">
-                                                    <Menu.Item>
-                                                        {({ active }) => (
-                                                            <Link href="/user-profile" className={`menu-link ${active ? 'active' : ''}`}>
-                                                                <i className="bx bx-user" />
-                                                                <span>Profile</span>
-                                                            </Link>
+                                        <div>
+                                            {/* Notification Dropdown */}
+                                            <Menu as="div" className="menu-container">
+                                                <div>
+                                                    <Menu.Button className="menu-button relative">
+                                                        <span className="icon-notification" />
+                                                        {hasNewNotification && (
+                                                            <span className="notif-indicator"></span>
                                                         )}
-                                                    </Menu.Item>
-                                                    <Menu.Item>
-                                                        {({ active }) => (
-                                                            <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                                <i className="bx bx-wallet" />
-                                                                <span>My Wallet</span>
-                                                            </Link>
+                                                    </Menu.Button>
+                                                </div>
+                                                <Menu.Items className="menu-items">
+                                                    <div className="menu-divider">
+                                                        {/* Notifications News — affichée uniquement s'il y en a */}
+                                                        {notifications.length > 0 && (
+                                                            <Menu.Item>
+                                                                {({ active }) => (
+                                                                    <div className="menu-link server-log">
+                                                                        <div className="data-info">
+                                                                            <h6>News Updates</h6>
+                                                                            {notifications.map((notif, index) => (
+                                                                                <p key={index}>{notif.message}</p>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </Menu.Item>
                                                         )}
-                                                    </Menu.Item>
-                                                    {/* <Menu.Item>
+
+                                                        {/* Server Rebooted */}
+                                                        <Menu.Item>
+                                                            {({ active }) => (
+                                                                <div className="menu-link server-log">
+                                                                    <span>🖥️</span>
+                                                                    <div className="data-info">
+                                                                        <h6>Server Rebooted</h6>
+                                                                        <p>
+                                                                            {lastLogin
+                                                                                ? moment(lastLogin).fromNow()
+                                                                                : "Inconnu"}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </Menu.Item>
+                                                    </div>
+                                                </Menu.Items>
+                                            </Menu>
+                                        </div>
+                                        <div>
+                                            <Menu as="div" className="menu-container">
+                                                <div className="wallet">
+                                                    <Menu.Button className="menu-button img">
+                                                        <img id="blah" className="wallet-user-profile" src="/assets/images/avt/avt.png" alt="user avatar" />
+                                                        <span className="status-indicator"></span>
+                                                    </Menu.Button>
+                                                </div>
+                                                <Menu.Items className="menu-items">
+                                                    <div className="menu-divider">
+                                                        <Menu.Item>
+                                                            {({ active }) => (
+                                                                <Link href="/user-profile" className={`menu-link ${active ? 'active' : ''}`}>
+                                                                    <i className="bx bx-user" />
+                                                                    <span>Profile</span>
+                                                                </Link>
+                                                            )}
+                                                        </Menu.Item>
+                                                        <Menu.Item>
+                                                            {({ active }) => (
+                                                                <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
+                                                                    <i className="bx bx-wallet" />
+                                                                    <span>My Wallet</span>
+                                                                </Link>
+                                                            )}
+                                                        </Menu.Item>
+                                                        {/* <Menu.Item>
                                                         {({ active }) => (
                                                             <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
                                                                 <i className="bx bx-wrench" />
@@ -278,18 +280,19 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                                             </Link>
                                                         )}
                                                     </Menu.Item> */}
-                                                    <div className="menu-divider" />
-                                                    <Menu.Item>
-                                                        {({ active }) => (
-                                                            <Link href="/login" className={`menu-link text-danger ${active ? 'active' : ''}`} onClick={handleLogout}>
-                                                                <i className="bx bx-power-off" />
-                                                                <span>Logout</span>
-                                                            </Link>
-                                                        )}
-                                                    </Menu.Item>
-                                                </div>
-                                            </Menu.Items>
-                                        </Menu>
+                                                        <div className="menu-divider" />
+                                                        <Menu.Item>
+                                                            {({ active }) => (
+                                                                <Link href="/login" className={`menu-link text-danger ${active ? 'active' : ''}`} onClick={handleLogout}>
+                                                                    <i className="bx bx-power-off" />
+                                                                    <span>Logout</span>
+                                                                </Link>
+                                                            )}
+                                                        </Menu.Item>
+                                                    </div>
+                                                </Menu.Items>
+                                            </Menu>
+                                        </div>
                                     </>
                                 )}
                                 <div className="d-block d-lg-none">
