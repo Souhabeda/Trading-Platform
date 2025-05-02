@@ -14,12 +14,86 @@ const ThemeSwitch = dynamic(() => import('@/components/elements/ThemeSwitch'), {
 })
 
 export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
+
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [lastLogin, setLastLogin] = useState(null)
     const [notifications, setNotifications] = useState([]);
-    const [hasNewNotification, setHasNewNotification] = useState(false);
+
+
+    const [newCount, setNewCount] = useState(0);
+    const [notificationForex, setNotificationsForex] = useState([]);
+
+
+    const hasNewNotification = newCount > 0;
 
     const router = useRouter()
+
+
+    // new forex news updates are now available.
+    useEffect(() => {
+        const fetchNewNews = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forex-news/new`, {
+                    headers: { "ngrok-skip-browser-warning": "skip" },
+                });
+                const data = await res.json();
+
+                const lastCheck = localStorage.getItem("lastNewsCheck");
+                const now = new Date().toISOString();
+
+                const newNews = data.new_forex_news.filter((news) => {
+                    return !lastCheck || news.created_at > lastCheck;
+                });
+
+                setNewCount(newNews.length);
+                setNotificationsForex(newNews);
+            } catch (error) {
+                console.error("Erreur lors de la récupération des nouvelles news :", error);
+            }
+        };
+
+        fetchNewNews();
+        const interval = setInterval(fetchNewNews, 60000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // new Kitco news updates are now available.
+    useEffect(() => {
+        const fetchNewArticles = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/get_latest_news`, {
+                    headers: { "ngrok-skip-browser-warning": "skip" },
+                });
+                const data = await res.json();
+
+                if (data.new_articles && data.new_articles.length > 0) {
+                    const newNotif = { message: `➕ ${data.added} new Kitco news updates are now available.` };
+                    setNotifications(prev => [...prev, newNotif]);
+                    setNewCount(prev => prev + 1);
+                }
+            } catch (error) {
+                console.error("Error fetching new articles:", error);
+            }
+        };
+
+        fetchNewArticles();
+
+        const intervalId = setInterval(fetchNewArticles, 30000);
+
+        return () => clearInterval(intervalId);
+    }, []);
+
+
+    // 📌 Marquer les notifications comme lues
+    const clearNotifications = () => {
+        const now = new Date().toISOString();
+        localStorage.setItem("lastNewsCheck", now);
+        setNewCount(0);
+        setNotificationsForex([]);
+        setNotifications([]);
+    };
+
 
     useEffect(() => {
         const token = localStorage.getItem("token")
@@ -30,35 +104,6 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
             setLastLogin(lastLoginStored)
         }
     }, [])
-
-    useEffect(() => {
-        // Fonction de polling pour récupérer les nouvelles actualités
-        const fetchNewArticles = async () => {
-            try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/news/update`, {
-                    method: "POST",
-                });
-                const data = await res.json();
-
-                if (data.new_articles && data.new_articles.length > 0) {
-                    const newNotif = { message: `➕ ${data.added} new Kitco news updates are now available.` };
-                    setNotifications(prev => [...prev, newNotif]);
-                    setHasNewNotification(true);
-                }
-            } catch (error) {
-                console.error("Error fetching new articles:", error);
-            }
-        };
-
-
-        // Appel de la fonction au lancement
-        fetchNewArticles();
-
-        // Polling toutes les 30 secondes
-        const intervalId = setInterval(fetchNewArticles, 30000);
-
-        return () => clearInterval(intervalId); // Nettoyer l'intervalle quand le composant est démonté
-    }, [notifications]);  // Ajoute `notifications` dans les dépendances
 
     const handleLogout = (e) => {
         e.preventDefault()
@@ -201,7 +246,7 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                             {/* Notification Dropdown */}
                                             <Menu as="div" className="menu-container">
                                                 <div>
-                                                    <Menu.Button className="menu-button relative">
+                                                    <Menu.Button className="menu-button relative" onClick={clearNotifications}>
                                                         <span className="icon-notification" />
                                                         {hasNewNotification && (
                                                             <span className="notif-indicator"></span>
@@ -210,16 +255,58 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                                 </div>
                                                 <Menu.Items className="menu-items">
                                                     <div className="menu-divider">
-                                                        {/* Notifications News — affichée uniquement s'il y en a */}
-                                                        {notifications.length > 0 && (
+                                                        {/* Notifications News kitco — affichée uniquement s'il y en a */}
+                                                        {/* 📰 Kitco News Updates */}
+                                                        {notifications.length > 0 ? (
                                                             <Menu.Item>
                                                                 {({ active }) => (
                                                                     <div className="menu-link server-log">
                                                                         <div className="data-info">
-                                                                            <h6>News Updates</h6>
+                                                                            <h6>📰 Kitco News Updates</h6>
                                                                             {notifications.map((notif, index) => (
                                                                                 <p key={index}>{notif.message}</p>
                                                                             ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </Menu.Item>
+                                                        ) : (
+                                                            // Affichage d'un message si aucune nouvelle notification Kitco
+                                                            <Menu.Item>
+                                                                {({ active }) => (
+                                                                    <div className="menu-link">
+                                                                        <div className="data-info">
+                                                                            <h6>📰 Kitco News Updates</h6>
+                                                                            <p>Aucune nouvelle actualité Kitco disponible.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </Menu.Item>
+                                                        )}
+                                                        {/* 📈 Forex News Updates */}
+                                                        {(Array.isArray(notificationForex) && notificationForex.length > 0) ? (
+                                                            <Menu.Item>
+                                                                {({ active }) => (
+                                                                    <div className="menu-link server-log">
+                                                                        <div className="data-info">
+                                                                            <h6>📊 Forex News Updates</h6>
+                                                                            {notificationForex.map((notif, index) => (
+                                                                                <p key={index}>
+                                                                                    <strong>{notif.Currency}</strong> : {notif.Event} à {notif.Time}
+                                                                                </p>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </Menu.Item>
+                                                        ) : (
+                                                            // Affichage d'un message si aucune nouvelle notification Forex
+                                                            <Menu.Item>
+                                                                {({ active }) => (
+                                                                    <div className="menu-link">
+                                                                        <div className="data-info">
+                                                                            <h6>📊 Forex News Updates</h6>
+                                                                            <p>Aucune nouvelle actualité Forex disponible.</p>
                                                                         </div>
                                                                     </div>
                                                                 )}
@@ -306,7 +393,7 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                 </div>
             </div>
 
-            <MobileMenu isMobileMenu={isMobileMenu} />
+            <MobileMenu isMobileMenu={isMobileMenu} notificationForex={notificationForex || []} notifications={notifications || []} lastLogin={lastLogin} />
         </header>
     )
 }

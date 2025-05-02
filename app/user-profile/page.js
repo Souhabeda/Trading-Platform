@@ -129,7 +129,6 @@ export default function UserProfile() {
         }
     }
 
-
     return (
         <>
             <Layout headerStyle={1} footerStyle={2} breadcrumbTitle="User Profile">
