@@ -37,9 +37,9 @@ export default function MainMenu() {
                         <Link href="/markets">Markets</Link>
                     </li>
 
-                    <li className={`menu-item ${pathname === "/wallet" ? "current-menu-item" : ""}`}>
+                    {/* <li className={`menu-item ${pathname === "/wallet" ? "current-menu-item" : ""}`}>
                         <Link href="/wallet">Wallet</Link>
-                    </li>
+                    </li> */}
 
                     <li className={`menu-item ${pathname === "/risk_disclosure" ? "current-menu-item" : ""}`}>
                         <Link href="/risk_disclosure">Risk Disclosure</Link>

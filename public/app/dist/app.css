@@ -3682,6 +3682,37 @@ body[data-magic-cursor=hide] .mouse-cursor {
     }
 }
 
+.buy-crypto .buy-crypto__main .top .top-list.sell-list {
+    display: flex;
+    justify-content: space-around;
+}
+
+@media only screen and (max-width: 767px) {
+    .buy-crypto .buy-crypto__main .top .top-list.sell-list {
+        flex-wrap: wrap;
+    }
+
+    .buy-crypto .buy-crypto__main .top .top-list.sell-list li {
+        margin: 10px;
+    }
+}
+.buy-crypto .buy-crypto__main .top .top-list.sell-list li::after{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    top: 9px;
+    left: auto;
+    right: -230px;
+    width: 200px;
+    border: 1px dashed #e5e5e5;
+}
+
+@media only screen and (max-width: 1024px) {
+    .buy-crypto .buy-crypto__main .top .top-list.sell-list li::after {
+        display: none;
+    }
+}
 .buy-crypto .buy-crypto__main .top .top-list li:last-child {
     margin-right: 0;
 }
@@ -4156,7 +4187,7 @@ body[data-magic-cursor=hide] .mouse-cursor {
 }
 
 .buy-crypto .buy-crypto__main .main.payment .group-button button {
-    width: 50%;
+    width: 20%;
     border-color: var(--primary);
     font-weight: 700;
     font-size: 16px;
@@ -6417,6 +6448,12 @@ body[data-magic-cursor=hide] .mouse-cursor {
     justify-content: space-between;
 }
 
+
+.top .top-list.sell-list {
+    display: flex;
+    justify-content: space-around;
+}
+
 @media only screen and (max-width: 767px) {
     .top .top-list {
         flex-wrap: wrap;
@@ -6440,6 +6477,18 @@ body[data-magic-cursor=hide] .mouse-cursor {
     left: auto;
     right: -140px;
     width: 120px;
+    border: 1px dashed #e5e5e5;
+}
+
+.top .top-list.sell-list li::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    top: 9px;
+    left: auto;
+    right: -250px;
+    width: 200px;
     border: 1px dashed #e5e5e5;
 }
 
@@ -7554,8 +7603,6 @@ body[data-magic-cursor=hide] .mouse-cursor {
 }
 
 
-
-
 /* /////////////////////////////////////////////////////CHATBOT//////////////////////////////////////////////////////////// */
 
 #chatbot-toggler {
@@ -7992,7 +8039,6 @@ body[data-magic-cursor=hide] .mouse-cursor {
     z-index: 50;
     overflow: hidden;
   }
-  
   .menu-divider {
     display: flex;
     flex-direction: column;
@@ -8074,6 +8120,13 @@ body[data-magic-cursor=hide] .mouse-cursor {
     margin: 0;
     font-size: 14px;
     font-weight: 600;
+  } 
+
+  .is_dark .data-info h6 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: black;
   }
   
   .data-info p {
@@ -8097,13 +8150,7 @@ body[data-magic-cursor=hide] .mouse-cursor {
   .apexcharts-legend {
     margin-top: 20px; /* ou plus/moins selon ton besoin */
   }
-
-
-
-
-
-
-
+  
   .is_dark .modal-title{
     color:black;
   }
@@ -8119,3 +8166,73 @@ body[data-magic-cursor=hide] .mouse-cursor {
     font-weight: 500;
   }
   
+    .input-with-select {
+      position: relative;
+      display: flex;
+    }
+
+    .input-with-select input {
+      flex: 1;
+      padding-right: 100px;
+    }
+
+    .select-currency {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      border: none;
+      background: transparent;
+      padding-left: 8px;
+      padding-right: 8px;
+      font-weight: bold;
+      color: wheat;
+    }
+    .btn-stripe {
+        background-color: #ffc439;        
+        color: #545050;                      
+        font-weight: bold;
+        font-family: sans-serif;
+        font-size: 20px;
+        padding: 19px 0;
+        width: 100%;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .coinList-name{
+        padding-left: 10px;
+    }      
+    .qr-code-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .main.info .group-button {
+        display: flex;
+        margin: 32px 0px 0;
+    }
+    
+    .main.info .group-button button {
+        width: 20%;
+        border-color: var(--primary);
+        font-weight: 700;
+        font-size: 16px;
+        padding: 10px;
+        margin: 0 10px;
+    }
+    
+    .main.info .group-button button.cancel {
+        background: var(--bg1);
+        color: var(--primary);
+        border-width: 1px;
+    }
+    
+    .main.info .group-button button.cancel:hover {
+        background: var(--primary);
+        color: #fff;
+    }

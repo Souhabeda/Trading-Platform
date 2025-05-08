@@ -1,7 +1,6 @@
 'use client';
 import Link from "next/link";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -48,12 +47,15 @@ export default function Banner1() {
     
 
     useEffect(() => {
+        if (newsList.length === 0) return;
+    
         const interval = setInterval(() => {
             setIndex(prev => (prev + 1) % newsList.length);
         }, 3000);
+    
         return () => clearInterval(interval);
     }, [newsList]);
-
+    
     useEffect(() => {
         const token = localStorage.getItem('token');
         setUser(!!token);
@@ -86,13 +88,13 @@ export default function Banner1() {
                 </div>
             </div>
             <div className="news-notification">
-            {newsList.length > 0 ? (
-                    <span>
-                        <strong>{newsList[index].sentiment}</strong> {newsList[index].summary}
-                    </span>
-                ) : (
-                    "Chargement des actualités..."
-                )}
+            {newsList.length > 0 && newsList[index] ? (
+    <span>
+        <strong>{newsList[index].sentiment}</strong> {newsList[index].summary}
+    </span>
+) : (
+    "Chargement des actualités..."
+)}
             </div>
         </section>
     )

@@ -8,10 +8,14 @@ import MainMenu from '../Menu'
 import MobileMenu from '../MobileMenu'
 import { useRouter } from 'next/navigation'
 import moment from "moment";
+import io from "socket.io-client"
+
 
 const ThemeSwitch = dynamic(() => import('@/components/elements/ThemeSwitch'), {
     ssr: false,
 })
+
+const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL)
 
 export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
 
@@ -28,8 +32,51 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
 
     const router = useRouter()
 
+     // 🔌 Connexion WebSocket pour les news Kitco
+     useEffect(() => {
+        socket.on("connect", () => {
+            console.log("🟢 WebSocket connecté");
+        })
 
-    // new forex news updates are now available.
+        socket.on("new_news_update", (data) => {
+            console.log("🆕 Nouvelle actualité reçue via WebSocket:", data);
+            const newNotif = { message: `➕ ${data.articles.length} nouvelles actualités Kitco.` };
+            setNotifications(prev => [...prev, newNotif]);
+            setNewCount(prev => prev + 1);
+        })
+
+        return () => {
+            socket.off("connect");
+            socket.off("new_news_update");
+        }
+    }, []);
+
+    // 🔁 Polling fallback pour Kitco news (si WebSocket rate)
+    useEffect(() => {
+        const fetchNewArticles = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/get_latest_news`, {
+                    headers: { "ngrok-skip-browser-warning": "skip" },
+                });
+                const data = await res.json();
+
+                if (data.new_articles && data.new_articles.length > 0) {
+                    const newNotif = { message: `➕ ${data.new_articles.length} nouvelles actualités Kitco.` };
+                    setNotifications(prev => [...prev, newNotif]);
+                    setNewCount(prev => prev + 1);
+                }
+            } catch (error) {
+                console.error("Erreur récupération Kitco news :", error);
+            }
+        };
+
+        fetchNewArticles();
+        const intervalId = setInterval(fetchNewArticles, 60000); // 1 min
+
+        return () => clearInterval(intervalId);
+    }, []);
+
+    // 🔁 Polling pour Forex news
     useEffect(() => {
         const fetchNewNews = async () => {
             try {
@@ -45,47 +92,20 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                     return !lastCheck || news.created_at > lastCheck;
                 });
 
-                setNewCount(newNews.length);
+                setNewCount(prev => prev + newNews.length);
                 setNotificationsForex(newNews);
             } catch (error) {
-                console.error("Erreur lors de la récupération des nouvelles news :", error);
+                console.error("Erreur récupération Forex news :", error);
             }
         };
 
         fetchNewNews();
-        const interval = setInterval(fetchNewNews, 60000);
+        const interval = setInterval(fetchNewNews, 60000); // 1 min
 
         return () => clearInterval(interval);
     }, []);
 
-    // new Kitco news updates are now available.
-    useEffect(() => {
-        const fetchNewArticles = async () => {
-            try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/get_latest_news`, {
-                    headers: { "ngrok-skip-browser-warning": "skip" },
-                });
-                const data = await res.json();
-
-                if (data.new_articles && data.new_articles.length > 0) {
-                    const newNotif = { message: `➕ ${data.added} new Kitco news updates are now available.` };
-                    setNotifications(prev => [...prev, newNotif]);
-                    setNewCount(prev => prev + 1);
-                }
-            } catch (error) {
-                console.error("Error fetching new articles:", error);
-            }
-        };
-
-        fetchNewArticles();
-
-        const intervalId = setInterval(fetchNewArticles, 30000);
-
-        return () => clearInterval(intervalId);
-    }, []);
-
-
-    // 📌 Marquer les notifications comme lues
+    // 📌 Marquer comme lues
     const clearNotifications = () => {
         const now = new Date().toISOString();
         localStorage.setItem("lastNewsCheck", now);
@@ -94,12 +114,10 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
         setNotifications([]);
     };
 
-
     useEffect(() => {
         const token = localStorage.getItem("token")
         const lastLoginStored = localStorage.getItem("lastLogin")
         setIsAuthenticated(!!token)
-        console.log("lastLogin from storage:", lastLoginStored) // 🐞
         if (lastLoginStored) {
             setLastLogin(lastLoginStored)
         }
@@ -245,14 +263,12 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                         <div>
                                             {/* Notification Dropdown */}
                                             <Menu as="div" className="menu-container">
-                                                <div>
                                                     <Menu.Button className="menu-button relative" onClick={clearNotifications}>
                                                         <span className="icon-notification" />
                                                         {hasNewNotification && (
                                                             <span className="notif-indicator"></span>
                                                         )}
                                                     </Menu.Button>
-                                                </div>
                                                 <Menu.Items className="menu-items">
                                                     <div className="menu-divider">
                                                         {/* Notifications News kitco — affichée uniquement s'il y en a */}
