@@ -3,11 +3,11 @@ import dynamic from "next/dynamic";
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { HiArrowTrendingUp, HiArrowTrendingDown } from "react-icons/hi2";
-import { IoClose } from "react-icons/io5";
 import Layout from "@/components/layout/Layout";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { v4 as uuidv4 } from "uuid";
+import { ZoomIn, ZoomOut } from "lucide-react";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -40,11 +40,13 @@ export default function Markets() {
   const [indicator, setIndicator] = useState("");
   const [timeframe, setTimeframe] = useState("");
 
-  const [series, setSeries] = useState([]);
-  const [options, setOptions] = useState({});
+
   const [currentValue, setCurrentValue] = useState(null);
   const [prediction, setPrediction] = useState("Neutral");
 
+  const [marketStatus, setMarketStatus] = useState("open");
+  const [nextMarketOpen, setNextMarketOpen] = useState("");
+  const [marketData, setMarketData] = useState(null);
 
   const [newsItems, setNewsItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -134,187 +136,262 @@ export default function Markets() {
     fetchOptions();
   }, []);
 
+  useEffect(() => {
+    console.log("Market Data:", marketData);
+  }, [marketData]);
+
   const applySettings = async () => {
     if (!pair || !indicator || !timeframe) {
       toast.error("Veuillez remplir tous les champs !");
       return;
     }
 
-    setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/full-lstm-analysis`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "skip" },
         body: JSON.stringify({ symbol: pair, indicator, timeframe }),
       });
 
-      const data = await res.json();
-
-      setCurrentValue(data.indicator_value); // ← valeur réelle de l'indicateur (ex: RSI)
-      setPrediction(
-        data.lstm_prediction?.trend === "UP"
-          ? "Bullish"
-          : data.lstm_prediction?.trend === "DOWN"
-          ? "Bearish"
-          : "Neutral"
-      );
-
-      if (!res.ok || data.market_status === "closed") {
-        toast.error(data.message || "Marché fermé ou erreur");
-        setSeries([]);
-        setLoading(false);
+      if (!res.ok) {
+        toast.error("Erreur lors du chargement des données.");
         return;
       }
 
-       // ✔️ Extraction sûre
-       const candles = data.candles || [];
-       const pastPred = data.lstm_prediction?.last_points_prediction || [];
-       const sl = data.signal_info?.stop_loss ?? null;
-       const tp = data.signal_info?.take_profit ?? null;
-       const entry = data.signal_info?.entry ?? null;
-       const signal = data.signal_info?.signal ?? null;
-       const pred = data.lstm_prediction?.predicted_price ?? null;
-       const fluctuationData = data.lstm_prediction?.fluctuation_data || [];
+      const data = await res.json();
+      console.log("Données reçues:", data);
+      setMarketData(data); // ✅ Stocke `data` dans l'état global
 
-       const predTime = Date.parse(data.signal_info?.timestamp ?? "") || Date.now();
-       const dateTime = new Date(data.signal_info?.timestamp).toLocaleString();
-       const realPrice = candles[candles.length - 1]?.Close;
+      // ✅ Met à jour `currentValue` avec `entry_price`
+      setCurrentValue(data.entry_price);
 
-      const realData = candles.map(c => ({ x: new Date(c.Time).getTime(), y: c.Close }));
-      const pastPredData = pastPred.map(p => ({ x: new Date(p.Time).getTime(), y: p.Close }));
-      const formattedFluctuationData = fluctuationData.map(point => ({
-        x: new Date(point.Time).getTime(),
-        y: [point.Lower, point.Upper]
-      }));
-      const medianFluctuationData = fluctuationData.map(point => ({
-        x: new Date(point.Time).getTime(),
-        y: (point.Lower + point.Upper) / 2
-      }));
-      
-      console.log("fluctuationData:", fluctuationData);
+      // ✅ Met à jour `prediction` avec le signal de tendance
+      setPrediction(data.signal === "buy" ? "Bullish" : data.signal === "sell" ? "Bearish" : "Neutral");
 
-      const chartSeries = [
-        { name: "Real Price", data: realData },
-        { name: "Past Prediction", data: pastPredData },
-        { name: "Future Prediction", data: [{ x: predTime, y: pred }] },
-        {
-          name: "Stop Loss",
-          data: realData.map(p => ({ x: p.x, y: stop_loss })),
-        },
-        {
-          name: "Take Profit",
-          data: realData.map(p => ({ x: p.x, y: tp })),
-        },
-        {
-          name: "Entry",
-          data: realData.map(p => ({ x: p.x, y: entry }))
-        },
-        {
-          name: "Fluctuations",
-          type: "rangeArea",
-          data: formattedFluctuationData
-        },
-        {
-          name: "Médiane des fluctuations",
-          data: medianFluctuationData,
-          type: "line",
-          dashArray: 5
+      // Vérification si le marché est fermé
+      if (!data.market_open) {
+        setMarketStatus("closed");
+        setNextMarketOpen(data.next_open || "Indisponible");
+        toast.warn(`Marché fermé. Réouverture prévue le ${data.next_open || "Indisponible"}`);
+
+        if (data.last_snapshot) {
+          toast.info("Affichage du dernier snapshot disponible.");
         }
-      ];
-      const chartOptions = {
-        chart: {
-          id: "main-chart",
-          type: "line",
-          height: 500,
-          toolbar: { show: true },
-          zoom: { enabled: false },
-        },
-        stroke: {
-          width: [3, 2, 2, 1, 1, 1, 2],
-          curve: 'smooth'
-        },
-        fill: {
-          type: ['solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'gradient'],
-          gradient: {
-            shadeIntensity: 1,
-            inverseColors: false,
-            opacityFrom: 0.4,
-            opacityTo: 0,
-            stops: [0, 90, 100]
-          }
-        },          
-        colors: [
-          '#00E396', // Real Price
-          '#FEB019', // Past Prediction
-          '#775DD0', // Future Prediction
-          '#FF4560', // Stop Loss
-          '#008FFB', // Take Profit
-          '#9C27B0', // Entry
-          '#FF6B6B', // Fluctuations
-          '#FF0000'  // Médiane (rouge vif)
-        ],
-        tooltip: {
-          shared: true,
-          intersect: false,
-        },
-        legend: {
-          position: 'top',
-        },
-        annotations: {
-          xaxis: [
-            {
-              x: predTime,
-              borderColor: '#775DD0',
-              label: {
-                text: signal && entry ? `${signal.toUpperCase()} @ ${entry} (${dateTime})` : `@ ${entry ?? "?"} (${dateTime})`,
-                style: {
-                  background: signal?.toLowerCase() === "buy" ? '#00E396' : '#FF4560',
-                  color: "#fff"
-                }
-              }
-            }
-          ],
-          points: [
-            {
-              x: predTime,
-              y: pred,
-              marker: {
-                size: 6,
-                fillColor: '#775DD0',
-                strokeColor: '#fff',
-                radius: 2
-              },
-              label: {
-                borderColor: '#775DD0',
-                offsetY: -20,
-                style: {
-                  background: '#775DD0',
-                  color: '#fff',
-                  fontSize: '12px',
-                  fontWeight: 500
-                },
-                text: `Pred: ${pred?.toFixed(4)} | Real: ${realPrice?.toFixed(4)} | Fluct: ${(pred - realPrice).toFixed(4)}`
-              }
-            }
-          ]
-        }, 
-        xaxis: {
-          type: 'datetime',
-        
-        },
-      };
-      
+        return;
+      }
 
-      setSeries(chartSeries);
-      setOptions(chartOptions);
-
+      setMarketStatus("open");
       toast.success("Données chargées !");
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors du chargement des données.");
     }
+  };
 
-    setLoading(false);
+  const formatChartData = (data = {}) => {
+    if (!data || !data.ohlc) return [];
+
+    return data.ohlc.map(c => ({
+      x: new Date(c.time).getTime(),
+      o: Number(c.open),
+      h: Number(c.high),
+      l: Number(c.low),
+      c: Number(c.close),
+      y: Number(c.close)  // utilisé pour la ligne
+    }));
+  };
+
+  const chartSeries = marketData && marketData.ohlc ? [
+    {
+      name: "Prix réel",
+      type: "candlestick",
+      data: formatChartData(marketData).map(c => ({
+        x: c.x, // Utilise la date formatée
+        y: [c.o, c.h, c.l, c.c] // Utilise les valeurs formatées d'open, high, low, close
+      }))
+    },
+
+    {
+      name: "Prédiction future",
+      type: "line",
+      data: marketData.future_timestamps.map((time, i) => ({
+        x: marketData.future_timestamps,
+        y: marketData.future_prediction[i]
+      })),
+      color: "#775DD0", dashArray: 4
+    },
+
+    {
+      name: "Entry Price",
+      type: "line",
+      data: marketData.ohlc.map(c => ({ x: new Date(c.time).getTime(), y: marketData.entry_price })),
+      color: "#008FFB", dashArray: 4
+    },
+
+    {
+      name: "Fluctuation Lower",
+      type: "line",
+      data: marketData.ohlc.map(c => ({ x: new Date(c.time).getTime(), y: marketData.fluctuation.lower })),
+      color: "#C95792", dashArray: 2
+    },
+
+    {
+      name: "Fluctuation Median",
+      type: "line",
+      data: marketData.ohlc.map(c => ({ x: new Date(c.time).getTime(), y: marketData.fluctuation.median })),
+      color: "#273F4F", dashArray: 2
+    },
+
+    {
+      name: "Fluctuation Upper",
+      type: "line",
+      data: marketData.ohlc.map(c => ({ x: new Date(c.time).getTime(), y: marketData.fluctuation.upper })),
+      color: "#FE7743", dashArray: 2
+    },
+    {
+      name: "Take Profit", type: "line",
+      data: marketData.ohlc.map(c => ({ x: new Date(c.time).getTime(), y: marketData.tp })),
+      color: "#537D5D", dashArray: 4
+    },
+
+    {
+      name: "Stop Loss", type: "line",
+      data: marketData.ohlc.map(c => ({ x: new Date(c.time).getTime(), y: marketData.sl })),
+      color: "#FFF100", dashArray: 4
+    }
+  ] : [];
+
+  const chartOptions = {
+    chart: {
+      id: "main-chart", type: "candlestick", height: 500, toolbar: {
+        show: true, tools: {
+          download: true,
+          selection: false,
+          zoom: false,
+          zoomin: false,
+          zoomout: false,
+          pan: false,
+          reset: false
+        }
+      }
+    }, // ✅ Modifie le type du graphique
+    stroke: { width: [1, 2, 2, 2], curve: "smooth", dashArray: [0, 0, 4, 4] },
+    colors: ["#00E396", "#775DD0", "#FEB019", "#FF4560"],
+    xaxis: {
+      type: 'datetime',
+      labels: { format: 'dd MMM yyyy HH:mm', datetimeUTC: false },
+    },
+    yaxis: { title: { text: 'Valeur' } },
+    plotOptions: {
+      candlestick: { colors: { upward: "#00E396", downward: "#FF4560" } } // ✅ Couleurs pour Buy/Sell
+    },
+    tooltip: {
+      shared: true,
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+        const seriesType = w.config.series[seriesIndex].type;
+        const seriesName = w.config.series[seriesIndex].name;
+        const data = w.config.series[seriesIndex].data[dataPointIndex];
+
+        if (!data) return '';
+
+        const timestamp = data.x;
+        const date = new Date(timestamp);
+        const formattedDate = date.toUTCString().replace("GMT", "UTC"); // Ex: "Tue, 14 May 2025 15:42:00 UTC"
+
+        if (seriesType === "candlestick") {
+          const [o, h, l, c] = data.y;
+          return `
+        <div style="padding:5px">
+          <strong>${seriesName}</strong><br/>
+          <span>${formattedDate}</span><br/>
+          Open: ${o}<br/>
+          High: ${h}<br/>
+          Low: ${l}<br/>
+          Close: ${c}
+        </div>
+      `;
+        } else {
+          return `
+        <div style="padding:5px">
+          <strong>${seriesName}</strong><br/>
+          <span>${formattedDate}</span><br/>
+          Value: ${data.y}
+        </div>
+      `;
+        }
+      }
+    },
+    annotations: {
+      yaxis: [
+        {
+          y: marketData?.tp,
+          borderColor: '#537D5D',
+          // label: {
+          //   text: `Take Profit: ${marketData?.tp}`,
+          //   style: { background: '#FEB019', color: '#fff' }
+          // }
+        },
+        {
+          y: marketData?.sl,
+          borderColor: '#FFF100',
+          // label: {
+          //   text: `Stop Loss: ${marketData?.sl}`,
+          //   style: { background: '#FF4560', color: '#fff' }
+          // }
+        },
+        {
+          y: marketData?.entry_price,
+          borderColor: '#008FFB',
+          // label: {
+          //   text: `Entry Price: ${marketData?.entry_price}`,
+          //   style: { background: '#008FFB', color: '#fff' }
+          // }
+        },
+        {
+          y: marketData?.fluctuation.lower,
+          y2: marketData?.fluctuation.upper,
+          borderColor: 'transparent',
+          fillColor: 'rgba(255, 69, 96, 0.45)', // rouge transparent
+          opacity: 0.1,
+          label: {
+            // text: 'Fluctuation Zone',
+            style: { background: '#FF4560', color: '#fff' }
+          }
+        },
+        {
+          y: marketData?.fluctuation.median,
+          borderColor: '#273F4F',
+          // label: {
+          //   text: `Fluctuation Median: ${marketData?.fluctuation.median}`,
+          //   style: { background: '#00E396', color: '#fff' }
+          // }
+        },
+        {
+          y: marketData?.fluctuation.upper,
+          borderColor: '#FE7743',
+          // label: {
+          //   text: `Fluctuation Upper: ${marketData?.fluctuation.upper}`,
+          //   style: { background: '#FEB019', color: '#fff' }
+          // }
+        },
+        {
+          y: marketData?.fluctuation.lower,
+          borderColor: 'C95792',
+          // label: {
+          //   text: `Fluctuation lower: ${marketData?.fluctuation.lower}`,
+          //   style: { background: '#FEB019', color: '#fff' }
+          // #B5FCCD}
+        },
+        {
+          y: marketData?.future_prediction?.[0],
+          borderColor: '#775DD0',
+          label: {
+            text: `Prédiction: ${marketData?.future_prediction?.[0]}`,
+            style: { background: '#775DD0', color: '#fff' }
+          }
+        }
+      ],
+    }
   };
 
   return (
@@ -343,7 +420,6 @@ export default function Markets() {
                     {indicators.map((ind, i) => <option key={i} value={ind}>{ind}</option>)}
                   </select>
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Timeframe</label>
                   <select className="form-select" value={timeframe} onChange={(e) => setTimeframe(e.target.value)}>
@@ -357,20 +433,23 @@ export default function Markets() {
                 </button>
               </div>
             </div>
-
             {/* Main Content */}
             <div className="col-lg-9">
               <div className="p-4 rounded shadow h-100 d-flex flex-column">
                 <div className="p-4 rounded shadow h-100 d-flex flex-column mb-4">
                   <h4 className="mb-3">Candlestick Chart</h4>
-                  {series.length > 0 && options ? (
-  <Chart options={options} series={series} type="line" height={500} />
-) : (
-  <div className="text-center text-muted py-5">
-    Aucune donnée disponible pour cette sélection.
-  </div>
-)}
-
+                  {marketStatus === "closed" ? (
+                    <div className="text-center text-warning py-5">
+                      <strong>🚨 Marché fermé 🚨</strong>
+                      <p>Réouverture prévue : <strong>{nextMarketOpen}</strong></p>
+                    </div>
+                  ) : (
+                    chartSeries.length > 0 ? (
+                      <Chart options={chartOptions} series={chartSeries} type="line" height={500} />
+                    ) : (
+                      <div className="text-center text-muted py-5">Aucune donnée disponible.</div>
+                    )
+                  )}
                 </div>
                 <div className="d-flex flex-wrap gap-4">
                   {(pair && indicator) && (
@@ -385,6 +464,27 @@ export default function Markets() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                       >
+                        <div
+                          style={{
+                            background: !marketData ? "#D3D3D3" : marketData?.signal === "buy" ? "#00E396" : "#FF4560", // Fond gris pendant le chargement
+                            color: "#fff",
+                            padding: "10px",
+                            borderRadius: "5px",
+                            textAlign: "center",
+                          }}
+                        >
+                          <p>
+                            {`Signal: ${marketData?.signal?.toUpperCase()} | ${(() => {
+                              const date = new Date(marketData?.current_candle_time);
+                              if (isNaN(date)) {
+                                return "Invalid Date";
+                              }
+                              const dateStr = date.toLocaleDateString("en-GB"); // Format YYYY-MM-DD
+                              const timeStr = date.toLocaleTimeString("en-GB", { hour12: false }); // Format HH:MM:SS
+                              return `${dateStr} | ${timeStr}`;
+                            })()}`}
+                          </p>
+                        </div>
                         {prediction === "Bullish" && (
                           <div className="bullish">
                             <HiArrowTrendingUp size={32} />

@@ -239,10 +239,10 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                             <div className="menu-divider">
                                                 {[
                                                     { src: "/assets/images/flags/us.jpg", label: "English" },
-                                                    { src: "/assets/images/flags/spain.jpg", label: "Spanish" },
-                                                    { src: "/assets/images/flags/germany.jpg", label: "German" },
-                                                    { src: "/assets/images/flags/italy.jpg", label: "Italian" },
-                                                    { src: "/assets/images/flags/russia.jpg", label: "Russian" }
+                                                    // { src: "/assets/images/flags/spain.jpg", label: "Spanish" },
+                                                    // { src: "/assets/images/flags/germany.jpg", label: "German" },
+                                                    // { src: "/assets/images/flags/italy.jpg", label: "Italian" },
+                                                    // { src: "/assets/images/flags/russia.jpg", label: "Russian" }
                                                 ].map((lang, index) => (
                                                     <Menu.Item key={index}>
                                                         {({ active }) => (
@@ -367,14 +367,14 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                                                 </Link>
                                                             )}
                                                         </Menu.Item>
-                                                        <Menu.Item>
+                                                        {/* <Menu.Item>
                                                             {({ active }) => (
                                                                 <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
                                                                     <i className="bx bx-wallet" />
                                                                     <span>My Wallet</span>
                                                                 </Link>
                                                             )}
-                                                        </Menu.Item>
+                                                        </Menu.Item> */}
                                                         {/* <Menu.Item>
                                                         {({ active }) => (
                                                             <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>

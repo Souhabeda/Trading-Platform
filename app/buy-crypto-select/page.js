@@ -116,7 +116,7 @@ export default function BuyCryptoSelect() {
                                                         <input
                                                             type="number"
                                                             className="dollar"
-                                                            placeholder="US$"
+                                                            placeholder="USD$"
                                                             value={pay}
                                                             onChange={(e) => setPay(e.target.value)}
                                                         />
