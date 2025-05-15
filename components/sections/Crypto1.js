@@ -1,16 +1,17 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import io from "socket.io-client"
 import Link from "next/link"
+import { getSocket } from "@/lib/socket" 
 
-const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL)
 
 export default function Crypto1() {
     const [cryptoData, setCryptoData] = useState({})
 
     useEffect(() => {
-        socket.on("crypto_update", (data) => {
+        const socket = getSocket()
+
+        const handleCryptoUpdate = (data) => {
             const filtered = {}
             for (const key of ["btcusdt", "ethusdt", "solusdt", "bnbusdt"]) {
                 if (data[key]) {
@@ -18,9 +19,13 @@ export default function Crypto1() {
                 }
             }
             setCryptoData(filtered)
-        })
+        }
 
-        return () => socket.off("crypto_update")
+        socket.on("crypto_update", handleCryptoUpdate)
+
+        return () => {
+            socket.off("crypto_update", handleCryptoUpdate)
+        }
     }, [])
 
     const getIconName = (symbol) => {

@@ -3,17 +3,15 @@
 import Link from "next/link"
 import ChatList from "../chart/ChatList"
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
 import SignalArrow from "../elements/SignalArrow";
-
+import { getSocket } from "@/lib/socket";
 
 export default function Coinlist1() {
     const [flatTabs, setFlatTabs] = useState(1)
     const [cryptoData, setCryptoData] = useState([]);
 
-    useEffect(() => {
-        // ✅ Créer le socket uniquement côté client
-        const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL); // 🔁 Mets ici l'URL de ton backend
+ useEffect(() => {
+        const socket = getSocket();
 
         socket.on("crypto_update", (data) => {
             const sorted = Object.entries(data).map(([symbol, values], index) => ({
@@ -26,7 +24,7 @@ export default function Coinlist1() {
         });
 
         return () => {
-            socket.disconnect();
+            socket.off("crypto_update");
         };
     }, []);
 
