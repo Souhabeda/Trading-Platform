@@ -7,10 +7,9 @@ import ChatMessage from "./ChatMessage";
 
 
 export default function Chatbot () {
-  const [chatHistory, setChatHistory] = useState([]);
+    const [chatHistory, setChatHistory] = useState([]);
   const [showChatbot, setShowChatbot] = useState(false);
   const chatBodyRef = useRef(null);
-
 
   const generateBotResponse = async (history) => {
     const updateHistory = (text, isError = false) => {
@@ -19,60 +18,37 @@ export default function Chatbot () {
          { role: "model", text, isError }]
       );
     };
-  
+
     const userMessage = history[history.length - 1].text.toLowerCase().trim();
-  
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage }),
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok || !data.response) {
         throw new Error(data.error || "No valid response from backend.");
       }
-  
+
       updateHistory(data.response);
     } catch (err) {
-      console.warn("Backend failed, using Gemini fallback. Error:", err.message);
-  
-      // Gemini fallback
-      const formattedHistory = history.map(({ role, text }) => ({
-        role,
-        parts: [{ text }]
-      }));
-  
-      try {
-        const geminiResponse = await fetch(process.env.NEXT_PUBLIC_GEMINI_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: formattedHistory }),
-        });
-  
-        const geminiData = await geminiResponse.json();
-  
-        if (!geminiResponse.ok) {
-          throw new Error(geminiData.error?.message || "Gemini error.");
-        }
-  
-        const reply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "Hmm, I didn’t get that.";
-        updateHistory(reply.trim());
-      } catch (geminiError) {
-        updateHistory("Error calling fallback Gemini service: " + geminiError.message, true);
-      }
+      console.error("Erreur côté backend:", err.message);
+      updateHistory("Erreur avec le serveur. Réessaie plus tard.", true);
     }
   };
-  
+
+  // Scroll auto vers le bas après chaque nouveau message
   useEffect(() => {
     if (chatBodyRef.current) {
       chatBodyRef.current.scrollTo({ top: chatBodyRef.current.scrollHeight, behavior: "smooth" });
     }
   }, [chatHistory]);
 
-  // Chargement depuis localStorage au démarrage
+  // Chargement historique depuis localStorage
   useEffect(() => {
     const savedHistory = localStorage.getItem("chatHistory");
     if (savedHistory) {
@@ -80,7 +56,7 @@ export default function Chatbot () {
     }
   }, []);
 
-  // Sauvegarde dans localStorage à chaque mise à jour
+  // Sauvegarde de l’historique dans localStorage
   useEffect(() => {
     localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
   }, [chatHistory]);

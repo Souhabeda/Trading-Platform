@@ -45,29 +45,12 @@ export default function MobileMenu({ isMobileMenu, notificationForex, notificati
                                 <Link href="/markets">Markets</Link>
                             </li>
 
-                            <li className={`menu-item ${pathname === "/wallet" ? "current-menu-item" : ""}`}>
-                                <Link href="/wallet">Wallet</Link>
-                            </li>
-
                             <li className={`menu-item ${pathname === "/risk_disclosure" ? "current-menu-item" : ""}`}>
                                 <Link href="/risk_disclosure">Risk Disclosure</Link>
                             </li>
-                            <li className={`menu-item menu-item-has-children ${checkParentActive(["/user-profile",
-                                "/logout"
-                            ])}`}>
-                                <Link href="#"> Profile </Link>
-                                <RiArrowDownSFill className="arrow" onClick={() => handleClick(5)} />
-
-                                <ul className="sub-menu" style={{ display: `${isActive == 5 ? "block" : "none"}` }}>
-                                    <li className={`menu-item ${checkCurrentMenuItem("/user-profile")}`}>
-                                        <Link href="/user-profile">User Profile</Link>
-                                    </li>
-                                    <li className={`menu-item ${checkCurrentMenuItem("/logout")}`}>
-                                        <Link href="/login">Logout</Link>
-                                    </li>
-                                </ul>
+                              <li className={`menu-item ${pathname === "/user-profile" ? "current-menu-item" : ""}`}>
+                                <Link href="/user-profile">Profile</Link>
                             </li>
-
                             <li className="menu-item">
                                 <a href="#" onClick={(e) => { e.preventDefault(); setShowNotifications(!showNotifications) }}>
                                     Notifications
@@ -103,16 +86,23 @@ export default function MobileMenu({ isMobileMenu, notificationForex, notificati
                                     </ul>
                                 )}
                             </li>
-
                         </>
                     )}
 
                     <li className={`menu-item ${checkCurrentMenuItem("/contact")}`}>
                         <Link href="/contact">Contact</Link>
                     </li>
-
-
-
+                    {user && (
+                    <li className={`menu-item ${pathname === "/logout" ? "current-menu-item" : ""}`}>
+                        <Link className="logout" href="/logout">Logout</Link>
+                    </li>   
+                    )}
+                     {/* Bouton visible seulement si non connecté */}
+                    {!user && (
+                        <li className={`menu-item ${checkCurrentMenuItem("/login")}`}>
+                            <Link href="/login">Login</Link>
+                        </li>
+                    )}
                 </ul>
             </nav>
 

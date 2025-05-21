@@ -37,8 +37,8 @@ export default function Banner1() {
                 }));
                 setNewsList(summaries);
             } catch (err) {
-                console.error("Erreur lors de la récupération des news:", err);
-                setNewsList([{ summary: "Erreur lors de la récupération des actualités.", sentiment: "😐" }]);
+                console.error("Error retrieving news:", err);
+                setNewsList([{ summary: "Error retrieving news", sentiment: "😐" }]);
             }
         };
     
@@ -93,7 +93,7 @@ export default function Banner1() {
         <strong>{newsList[index].sentiment}</strong> {newsList[index].summary}
     </span>
 ) : (
-    "Chargement des actualités..."
+    "Loading news..."
 )}
             </div>
         </section>

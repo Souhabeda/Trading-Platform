@@ -27,7 +27,7 @@ export default function BuyCryptoDetails() {
                         setTransactionData(data);
                     }
                 })
-                .catch(err => console.error("Erreur récupération session Stripe :", err));
+                .catch(err => console.error("Error retrieving Stripe session :", err));
         }
     }, [searchParams]);
 
@@ -86,7 +86,7 @@ export default function BuyCryptoDetails() {
                                                         </h6>
                                                     </li>
                                                     <li className="active">
-                                                        <h6><span />Details</h6>
+                                                        <h6><span />Payment Details</h6>
                                                     </li>
                                                 </ul>
                                             </div>

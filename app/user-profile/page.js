@@ -11,6 +11,9 @@ import { useRouter } from "next/navigation";
 
 
 export default function UserProfile() {
+    const [preview, setPreview] = useState(null);
+    const [file, setFile] = useState(null);
+
     const [flatTabs, setFlatTabs] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const handleFlatTabs = (index) => setFlatTabs(index)
@@ -35,27 +38,52 @@ export default function UserProfile() {
         if (!token) return
 
         axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
-            headers: { Authorization: token, "ngrok-skip-browser-warning": "skip"  }
+            headers: { Authorization: token, "ngrok-skip-browser-warning": "skip" }
         })
             .then(res => setUser(res.data.user))
-            .catch(err => toast.error(err.response?.data?.msg || "Erreur"))
+            .catch(err => toast.error(err.response?.data?.msg || "Error"))
     }, [])
 
     const handleSubmit = async (e) => {
-        e.preventDefault()
-        const token = localStorage.getItem("token")
-        setIsSubmitting(true)
+        e.preventDefault();
+        const token = localStorage.getItem("token");
+        setIsSubmitting(true);
         try {
-            const res = await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, user, {
-                headers: { Authorization: token , "ngrok-skip-browser-warning": "skip" }
-            })
-            toast.success(res.data.msg || "Profile updated successfully")
+            const formData = new FormData();
+            for (const key in user) {
+                formData.append(key, user[key]);
+            }
+            if (file) {
+                formData.append("profile_picture", file);
+            }
+
+            const res = await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, formData, {
+                headers: {
+                    Authorization: token,
+                    "Content-Type": "multipart/form-data",
+                    "ngrok-skip-browser-warning": "skip"
+                },
+            });
+
+            toast.success(res.data.msg || "Profile updated successfully");
+            setFile(null);
+            setPreview(null);
+
+            // ✅ Enregistre l'image dans localStorage si disponible
+            if (res.data.profile_picture) {
+                localStorage.setItem("profile_picture", res.data.profile_picture);
+                console.log("Image sauvegardée dans localStorage !");
+            }
+            if (res.data.user?.gender) {
+                localStorage.setItem("gender", res.data.user.gender);
+            }
         } catch (err) {
-            toast.error(err.response?.data?.msg || "Erreur de mise à jour")
+            toast.error(err.response?.data?.msg || "Update error");
         } finally {
-            setIsSubmitting(false)
+            setIsSubmitting(false);
         }
-    }
+    };
+
 
     // handleChange 
     const handleChange = (e) => {
@@ -80,16 +108,16 @@ export default function UserProfile() {
     const handleChangePasswordSubmit = async (e) => {
         e.preventDefault();
         const token = localStorage.getItem("token");
-        if (!token) return toast.error("Token manquant");
+        if (!token) return toast.error("Missing token");
 
         try {
             const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/change-password`, passwordData, {
                 headers: {
                     Authorization: token,
-                    "ngrok-skip-browser-warning": "skip" 
+                    "ngrok-skip-browser-warning": "skip"
                 }
             });
-            toast.success(res.data.msg || "Mot de passe changé avec succès");
+            toast.success(res.data.msg || "Password changed successfully");
 
             // Reset les champs
             setPasswordData({
@@ -98,34 +126,34 @@ export default function UserProfile() {
                 confirm_password: ""
             });
         } catch (err) {
-            toast.error(err.response?.data?.msg || "Erreur lors du changement de mot de passe");
+            toast.error(err.response?.data?.msg || "Error while changing password");
         }
     };
 
     // handleDeleteAccount
     const handleDeleteAccount = async () => {
-         // Sécurité côté serveur : s'assurer qu'on est bien dans le navigateur
+        // Sécurité côté serveur : s'assurer qu'on est bien dans le navigateur
         if (typeof window === "undefined") return;
-        
-        const confirmed = window.confirm("Es-tu sûr de vouloir supprimer ton compte ? Cette action est irréversible.")
+
+        const confirmed = window.confirm("Are you sure you want to delete your account ? This action is irreversible.")
         if (!confirmed) return
 
-        const password = window.prompt("Veuillez entrer votre mot de passe pour confirmer la suppression de votre compte :")
-        if (!password) return toast.error("Mot de passe requis pour supprimer votre compte")
+        const password = window.prompt("Please enter your password to confirm account deletion : ")
+        if (!password) return toast.error("Password required to delete your account")
 
         const token = localStorage.getItem("token")
-        if (!token) return toast.error("Token manquant")
+        if (!token) return toast.error("Missing token")
 
         try {
             const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/delete-account`, {
-                headers: { Authorization: token, "ngrok-skip-browser-warning": "skip"  },
-                data: { password } 
+                headers: { Authorization: token, "ngrok-skip-browser-warning": "skip" },
+                data: { password }
             })
-            toast.success(res.data.msg || "Compte supprimé avec succès")
+            toast.success(res.data.msg || "Account deleted successfully.")
             localStorage.removeItem("token")
             setTimeout(() => router.push("/"), 2000)
         } catch (err) {
-            toast.error(err.response?.data?.msg || "Erreur lors de la suppression du compte")
+            toast.error(err.response?.data?.msg || "Error while deleting account")
         }
     }
 
@@ -139,8 +167,28 @@ export default function UserProfile() {
                                 <div className="col-xl-3 col-md-12">
                                     <div className="user-info center">
                                         <div className="avt">
-                                            <input type="file" className="custom-file-input" id="imgInp" required />
-                                            <img id="blah" src="/assets/images/avt/avt.png" alt="no file" />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="custom-file-input"
+                                                onChange={(e) => {
+                                                    const img = e.target.files[0];
+                                                    setFile(img);
+                                                    setPreview(URL.createObjectURL(img));
+                                                }}
+                                            />
+
+                                            <img
+                                                className="wallet-user-profile"
+                                                src={
+                                                    preview || user?.profile_picture ||
+                                                    (user?.gender === "female"
+                                                        ? "/assets/images/avt/avtf.png"
+                                                        : "/assets/images/avt/avt.png")
+                                                }
+                                                alt="profile"
+                                            />
+
                                         </div>
                                         <h6 className="name">{user.first_name} {user.last_name}</h6>
                                         <p>{user.email}</p>
@@ -234,7 +282,7 @@ export default function UserProfile() {
 
                                                 </div>
                                                 <button type="submit" disabled={isSubmitting} className="btn-action style-2">
-                                                    {isSubmitting ? "Enregistrement..." : "Enregistrer"}
+                                                    {isSubmitting ? "Saving..." : "Save"}
                                                 </button>
                                                 {/* <button type="submit" >Update Profile</button> */}
                                             </form>
@@ -318,7 +366,6 @@ export default function UserProfile() {
                         </div>
                     </section>
                 </div>
-
             </Layout>
         </>
     )

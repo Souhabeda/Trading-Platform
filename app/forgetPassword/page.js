@@ -12,7 +12,7 @@ export default function ForgetPassword() {
         e.preventDefault()
 
         if (!email) {
-            toast.error("Veuillez entrer votre adresse e-mail.")
+            toast.error("Please enter your email address.")
             return
         }
 
@@ -34,15 +34,15 @@ export default function ForgetPassword() {
  
 
             if (res.ok) {
-                toast.success(data.msg || "Message envoyé avec succès.")
+                toast.success(data.msg || "Message sent successfully.")
                 setEmail("")
             } else {
-                toast.error(data.msg || "Erreur lors de l'envoi.")
+                toast.error(data.msg || "Error while sending.")
             }
 
         } catch (err) {
-            console.error("Erreur réseau ou backend :", err)
-            toast.error("Erreur serveur. Veuillez réessayer.")
+            console.error("Network or backend error:", err)
+            toast.error("Server error. Please try again.")
         } finally {
             setLoading(false)
         }

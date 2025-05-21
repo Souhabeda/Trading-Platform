@@ -22,15 +22,15 @@ export default function Contact() {
 
         const { name, email, subject, message } = form
         if (!name || !email || !subject || !message) {
-            return toast.error("Tous les champs sont requis.")
+            return toast.error("All fields are required.")
         }
 
         try {
             const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/contact`, form)
-            toast.success(res.data.message || "Message envoyé avec succès")
+            toast.success(res.data.message || "Message sent successfully")
             setForm({ name: "", email: "", subject: "", message: "" })
         } catch (err) {
-            toast.error(err.response?.data?.error || "Erreur lors de l'envoi du message")
+            toast.error(err.response?.data?.error || "Error sending the message")
         }
     }
 

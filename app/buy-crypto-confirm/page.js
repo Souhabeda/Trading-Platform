@@ -85,7 +85,7 @@ export default function BuyCryptoConfirm({ selectedCrypto }) {
                           </svg> </span>Select currency
                       </h6></li>
                       <li className="active"><h6><span />Confirm Payment</h6></li>
-                      <li><h6><span />Complete Payment</h6></li>
+                      <li><h6><span />Payment Details</h6></li>
                     </ul>
                   </div>
 

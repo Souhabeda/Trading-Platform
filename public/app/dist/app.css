@@ -860,10 +860,6 @@ body[data-magic-cursor=hide] .mouse-cursor {
     fill: rgba(231, 81, 90, 0.2392156863);
 }
 
-.header .header__right .wallet {
-    margin-left: 15px;
-}
-
 /* .header .header__right .wallet a {
     padding: 5px 10px;
     border: 1px solid var(--onsurface);
@@ -5380,6 +5376,7 @@ body[data-magic-cursor=hide] .mouse-cursor {
     max-width: 260px;
     border-radius: 1000px;
     margin-bottom: 5px;
+    cursor: pointer;
 }
 
 .user-profile .menu-tab li svg {
@@ -7647,6 +7644,7 @@ body[data-magic-cursor=hide] .mouse-cursor {
     bottom: 90px;
     right: 35px;
     width: 420px;
+    height: 78%;
     transform: scale(0.2);
     overflow: hidden;
     background: #fff;
@@ -7729,6 +7727,7 @@ body[data-magic-cursor=hide] .mouse-cursor {
     display: flex;
     gap: 11px;
     align-items: center;
+    margin-bottom: 5px;
   }
   
   .chat-body .message.error .message-text {
@@ -8019,7 +8018,17 @@ body[data-magic-cursor=hide] .mouse-cursor {
     display: flex;
     align-items: center;
   }
-  
+
+  .menu-button.login{
+    background-color: var(--primary);
+    border-radius: 5px;
+    margin-left: 20px;
+
+  }
+   .menu-button.login:hover{
+    color: white;
+  }
+
   .menu-button img {
     width: 32px;
     height: 32px;
@@ -8103,6 +8112,8 @@ body[data-magic-cursor=hide] .mouse-cursor {
   .icon-notification {
     font-size: 20px;
     color: #333;
+    margin-left: 10px;
+    margin-right: -5px;
   }
   
   .text-danger {
@@ -8235,4 +8246,8 @@ body[data-magic-cursor=hide] .mouse-cursor {
     .main.info .group-button button.cancel:hover {
         background: var(--primary);
         color: #fff;
+    }
+
+    .logout{
+        color: red
     }

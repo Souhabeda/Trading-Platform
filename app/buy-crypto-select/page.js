@@ -48,7 +48,7 @@ export default function BuyCryptoSelect() {
                 );
                 setPrice(parseFloat(response.data.price));
             } catch (error) {
-                console.error('Erreur lors de la récupération du prix :', error);
+                console.error('Error retrieving the price :', error);
             }
         };
 
@@ -96,7 +96,7 @@ export default function BuyCryptoSelect() {
                                                         <h6><span />Select currency</h6>
                                                     </li>
                                                     <li>
-                                                        <h6><span />Important Notes</h6>
+                                                        <h6><span />Confirm Payment</h6>
                                                     </li>
                                                     <li>
                                                         <h6><span />Payment Details</h6>

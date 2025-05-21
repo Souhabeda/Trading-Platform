@@ -51,6 +51,10 @@ export default function Markets() {
   const [newsItems, setNewsItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingSnapshot, setLoadingSnapshot] = useState(false);
+  const [showSnapshot, setShowSnapshot] = useState(false);
+  const [hasClickedSnapshot, setHasClickedSnapshot] = useState(false);
+
 
   // //////////////////// forex news //////////////////
 
@@ -70,7 +74,7 @@ export default function Markets() {
         const data = await res.json();
 
         if (!Array.isArray(data.forex_news)) {
-          console.error("❌ forex_news n'est pas un tableau :", data);
+          console.error("❌ forex news is not an array :", data);
           setNewsItems([]);
           return;
         }
@@ -136,13 +140,16 @@ export default function Markets() {
     fetchOptions();
   }, []);
 
-  useEffect(() => {
-    console.log("Market Data:", marketData);
-  }, [marketData]);
+  const extractNextOpenDate = (message) => {
+    if (!message) return "Unavailable";
+
+    const match = message.match(/reopen on ([\d-]+\s[\d:]+)/);
+    return match ? match[1] : "Unavailable";
+  };
 
   const applySettings = async () => {
     if (!pair || !indicator || !timeframe) {
-      toast.error("Veuillez remplir tous les champs !");
+      toast.error("Please fill in all fields !");
       return;
     }
 
@@ -154,12 +161,12 @@ export default function Markets() {
       });
 
       if (!res.ok) {
-        toast.error("Erreur lors du chargement des données.");
+        toast.error("Error loading data.");
         return;
       }
 
       const data = await res.json();
-      console.log("Données reçues:", data);
+      console.log("Data received:", data);
       setMarketData(data); // ✅ Stocke `data` dans l'état global
 
       // ✅ Met à jour `currentValue` avec `entry_price`
@@ -168,23 +175,52 @@ export default function Markets() {
       // ✅ Met à jour `prediction` avec le signal de tendance
       setPrediction(data.signal === "buy" ? "Bullish" : data.signal === "sell" ? "Bearish" : "Neutral");
 
+
       // Vérification si le marché est fermé
       if (!data.market_open) {
         setMarketStatus("closed");
-        setNextMarketOpen(data.next_open || "Indisponible");
-        toast.warn(`Marché fermé. Réouverture prévue le ${data.next_open || "Indisponible"}`);
+
+        const nextOpenDate = extractNextOpenDate(data.message);
+        setNextMarketOpen(nextOpenDate);
+        toast.warn(`Market closed. Scheduled to reopen on ${nextOpenDate}`);
 
         if (data.last_snapshot) {
-          toast.info("Affichage du dernier snapshot disponible.");
+          toast.info("Displaying the latest available snapshot.");
         }
         return;
       }
 
       setMarketStatus("open");
-      toast.success("Données chargées !");
+      toast.success("Data loaded !");
     } catch (err) {
       console.error(err);
-      toast.error("Erreur lors du chargement des données.");
+      toast.error("Error loading data.");
+    }
+  };
+  console.log("Market status:", marketStatus);
+
+  const fetchLastSnapshot = async () => {
+    setLoadingSnapshot(true);
+
+    try {
+      const formattedIndicator = indicator.toLowerCase();
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/last-snapshot/${pair}/${timeframe}/${formattedIndicator}`);
+
+      if (!res.ok) {
+        toast.error("Error loading snapshot.");
+        setLoadingSnapshot(false);
+        return;
+      }
+
+      const snapshotData = await res.json();
+      setMarketData(snapshotData);
+      toast.success("Snapshot loaded!");
+      setShowSnapshot(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error loading snapshot.");
+    } finally {
+      setLoadingSnapshot(false);
     }
   };
 
@@ -203,7 +239,7 @@ export default function Markets() {
 
   const chartSeries = marketData && marketData.ohlc ? [
     {
-      name: "Prix réel",
+      name: "Real Price",
       type: "candlestick",
       data: formatChartData(marketData).map(c => ({
         x: c.x, // Utilise la date formatée
@@ -212,7 +248,7 @@ export default function Markets() {
     },
 
     {
-      name: "Prédiction future",
+      name: "Future Prediction",
       type: "line",
       data: marketData.future_timestamps.map((time, i) => ({
         x: marketData.future_timestamps,
@@ -348,8 +384,9 @@ export default function Markets() {
           // }
         },
         {
-          y: marketData?.fluctuation.lower,
-          y2: marketData?.fluctuation.upper,
+          y: marketData?.fluctuation?.lower ?? 0,
+          y2: marketData?.fluctuation?.upper ?? 0,
+
           borderColor: 'transparent',
           fillColor: 'rgba(255, 69, 96, 0.45)', // rouge transparent
           opacity: 0.1,
@@ -359,7 +396,7 @@ export default function Markets() {
           }
         },
         {
-          y: marketData?.fluctuation.median,
+          y: marketData?.fluctuation?.median ?? 0,
           borderColor: '#273F4F',
           // label: {
           //   text: `Fluctuation Median: ${marketData?.fluctuation.median}`,
@@ -367,7 +404,7 @@ export default function Markets() {
           // }
         },
         {
-          y: marketData?.fluctuation.upper,
+          y: marketData?.fluctuation?.upper ?? 0,
           borderColor: '#FE7743',
           // label: {
           //   text: `Fluctuation Upper: ${marketData?.fluctuation.upper}`,
@@ -375,7 +412,7 @@ export default function Markets() {
           // }
         },
         {
-          y: marketData?.fluctuation.lower,
+          y: marketData?.fluctuation?.lower ?? 0,
           borderColor: 'C95792',
           // label: {
           //   text: `Fluctuation lower: ${marketData?.fluctuation.lower}`,
@@ -404,7 +441,6 @@ export default function Markets() {
             <div className="col-lg-3">
               <div className="p-4 rounded shadow h-100">
                 <h4 className="mb-4 text-xl font-semibold">Market Settings</h4>
-
                 <div className="mb-3">
                   <label className="form-label">Currency Pair</label>
                   <select className="form-select" value={pair} onChange={(e) => setPair(e.target.value)}>
@@ -412,7 +448,6 @@ export default function Markets() {
                     {symbols.map((sym, i) => <option key={i} value={sym}>{sym}</option>)}
                   </select>
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Indicator</label>
                   <select className="form-select" value={indicator} onChange={(e) => setIndicator(e.target.value)}>
@@ -427,9 +462,14 @@ export default function Markets() {
                     {timeframes.map((tf, i) => <option key={i} value={tf}>{tf}</option>)}
                   </select>
                 </div>
-
                 <button onClick={applySettings} className="btn-wallet btn-primary-wallet w-100 mt-3">
                   Apply Settings
+                </button>
+                <button className="btn-wallet btn-primary-wallet w-100 mt-3" onClick={() => {
+                  setHasClickedSnapshot(true);
+                  fetchLastSnapshot();
+                }} disabled={loadingSnapshot}>
+                  {loadingSnapshot ? "Loading..." : "Show Last Snapshot"}
                 </button>
               </div>
             </div>
@@ -438,16 +478,37 @@ export default function Markets() {
               <div className="p-4 rounded shadow h-100 d-flex flex-column">
                 <div className="p-4 rounded shadow h-100 d-flex flex-column mb-4">
                   <h4 className="mb-3">Candlestick Chart</h4>
-                  {marketStatus === "closed" ? (
+                  {marketStatus === "closed" && !showSnapshot ? (
                     <div className="text-center text-warning py-5">
-                      <strong>🚨 Marché fermé 🚨</strong>
-                      <p>Réouverture prévue : <strong>{nextMarketOpen}</strong></p>
+                      <strong>🚨 Market closed 🚨</strong>
+                      {/* ✅ Afficher le message du backend s’il existe */}
+                      {marketData?.message && (
+                        <p className="mt-2">
+                          {marketData.message.split("\n").find(line => line.includes("The market is currently closed"))}
+                        </p>
+                      )}
+                      <button className="btn btn-primary mt-3 text-white" onClick={() => {
+                        setHasClickedSnapshot(true);
+                        fetchLastSnapshot();
+                      }} disabled={loadingSnapshot}>
+                        {loadingSnapshot ? "Loading..." : "Show Last Snapshot"}
+                      </button>
+                      {/* ✅ Afficher tout le message si last_snapshot est null APRÈS le clic */}
+                      {hasClickedSnapshot && marketData?.last_snapshot === null && marketData?.message && (
+                        <p className="mt-3 text-danger fw-bold">
+                          {marketData.message.split("\n").find(line => line.includes("No snapshot found"))}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     chartSeries.length > 0 ? (
                       <Chart options={chartOptions} series={chartSeries} type="line" height={500} />
                     ) : (
-                      <div className="text-center text-muted py-5">Aucune donnée disponible.</div>
+                      <div className="text-center text-muted py-5">
+                        <span className={`fw-bold ${marketStatus === "open" ? "text-success" : "text-danger"}`}>
+                          {marketStatus === "open" ? "📈 Market is open" : "🚫 Market closed"}
+                        </span>
+                      </div>
                     )
                   )}
                 </div>
@@ -510,7 +571,7 @@ export default function Markets() {
                     <h4 className="mb-2 text-lg font-semibold">Forex Factory News</h4>
 
                     {loading ? (
-                      <p>Chargement des actualités...</p>
+                      <p>Loading news...</p>
                     ) : (
                       <ul className="list-unstyled">
                         {visibleItems.map((item) => (

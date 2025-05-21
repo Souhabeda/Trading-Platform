@@ -51,17 +51,17 @@ export default function Register() {
 
         // VALIDATION FRONT-END
         if (!isValidEmail(formData.email)) {
-            toast.error("Format d'email invalide.")
+            toast.error("Invalid email format.")
             return
         }
 
         if (!isStrongPassword(formData.password)) {
-            toast.error("Mot de passe faible : 8 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial.")
+            toast.error("Weak password: minimum 8 characters, including uppercase, lowercase, number, and special character.")
             return
         }
 
         if (formData.password !== formData.re_password) {
-            toast.error("Les mots de passe ne correspondent pas.")
+            toast.error("Passwords do not match.")
             return
         }
 
@@ -83,9 +83,9 @@ export default function Register() {
             const data = await response.json()
 
             if (!response.ok) {
-                toast.error(data.msg || "Erreur inconnue")
+                toast.error(data.msg || "Unknown error.")
             } else {
-                toast.success("Inscription réussie ! Redirection en cours...")
+                toast.success("Registration successful ! Redirecting...")
                 setFormData({
                     email: "",
                     first_name: "",
@@ -102,8 +102,8 @@ export default function Register() {
             }
 
         } catch (err) {
-            console.error("Erreur réseau :", err)
-            toast.error("Erreur de connexion au serveur.")
+            console.error("Network error:", err)
+            toast.error("Server connection error.")
         }
     }
 

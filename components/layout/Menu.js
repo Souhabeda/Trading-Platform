@@ -50,6 +50,7 @@ export default function MainMenu() {
             <li className={`menu-item ${checkCurrentMenuItem("/contact")}`}>
                 <Link href="/contact">Contact</Link>
             </li>
+           
         </ul>
     )
 }

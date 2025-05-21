@@ -49,7 +49,7 @@ export default function ProtectedLayout({ children }) {
   }, [pathname])
 
   if (isLoading && !PUBLIC_ROUTES.includes(pathname)) {
-    return <div>Chargement...</div>
+    return <div>Loading...</div>
   }
 
   return children

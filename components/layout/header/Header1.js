@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation'
 import moment from "moment";
 import io from "socket.io-client"
 
-
 const ThemeSwitch = dynamic(() => import('@/components/elements/ThemeSwitch'), {
     ssr: false,
 })
@@ -22,8 +21,8 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [lastLogin, setLastLogin] = useState(null)
     const [notifications, setNotifications] = useState([]);
-
-
+    const [profilePicture, setProfilePicture] = useState(null);
+    const [gender, setGender] = useState(null);
     const [newCount, setNewCount] = useState(0);
     const [notificationForex, setNotificationsForex] = useState([]);
 
@@ -32,15 +31,26 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
 
     const router = useRouter()
 
-     // 🔌 Connexion WebSocket pour les news Kitco
-     useEffect(() => {
+    useEffect(() => {
+        const pic = localStorage.getItem("profile_picture");
+        const gender = localStorage.getItem("gender");
+
+        console.log("Image depuis localStorage:", pic);
+        console.log("Gender depuis localStorage:", gender);
+
+        if (pic) setProfilePicture(pic);
+        if (gender) setGender(gender);
+    }, []);
+
+    // 🔌 Connexion WebSocket pour les news Kitco
+    useEffect(() => {
         socket.on("connect", () => {
-            console.log("🟢 WebSocket connecté");
+            console.log("🟢 WebSocket connected.");
         })
 
         socket.on("new_news_update", (data) => {
-            console.log("🆕 Nouvelle actualité reçue via WebSocket:", data);
-            const newNotif = { message: `➕ ${data.articles.length} nouvelles actualités Kitco.` };
+            console.log("🆕 New news item received via WebSocket:", data);
+            const newNotif = { message: `➕ ${data.articles.length} New Kitco news.` };
             setNotifications(prev => [...prev, newNotif]);
             setNewCount(prev => prev + 1);
         })
@@ -66,7 +76,7 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                     setNewCount(prev => prev + 1);
                 }
             } catch (error) {
-                console.error("Erreur récupération Kitco news :", error);
+                console.error("Error retrieving Kitco news :", error);
             }
         };
 
@@ -95,7 +105,7 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                 setNewCount(prev => prev + newNews.length);
                 setNotificationsForex(newNews);
             } catch (error) {
-                console.error("Erreur récupération Forex news :", error);
+                console.error("Error retrieving Forex news :", error);
             }
         };
 
@@ -132,6 +142,11 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
         router.refresh()
     }
 
+    const defaultAvatar =
+        gender === "female"
+            ? "/assets/images/avt/avtf.png"
+            : "/assets/images/avt/avt.png";
+
 
     return (
         <header id="header_main" className={`header ${scroll ? "is-fixed is-small" : ""}`}>
@@ -160,115 +175,28 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                             <div className="header__right">
                                 <ThemeSwitch />
                                 <div className="d-none d-lg-flex items-center">
-                                    {/* <Menu as="div" className="menu-container">
-                                    <div>
-                                        <Menu.Button className="menu-button">Assets</Menu.Button>
-                                    </div>
-                                    <Menu.Items className="menu-items">
-                                        <div className="menu-divider">
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                        Binance Visa Card
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                        Crypto Loans
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                        Binance Pay
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                        </div>
-                                    </Menu.Items>
-                                </Menu> */}
-
-                                    {/* Orders & Trades Dropdown */}
-                                    {/* <Menu as="div" className="menu-container">
-                                    <div>
-                                        <Menu.Button className="menu-button">Orders & Trades</Menu.Button>
-                                    </div>
-                                    <Menu.Items className="menu-items">
-                                        <div className="menu-divider">
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                        Binance Convert
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                        Spot
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                        Margin
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                        P2P
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                        </div>
-                                    </Menu.Items>
-                                </Menu> */}
-
-                                    {/* Language Dropdown */}
+                                    {/* Bouton visible seulement si non connecté */}
                                     <Menu as="div" className="menu-container">
-                                        <div>
-                                            <Menu.Button className="menu-button">EN/USD</Menu.Button>
-                                        </div>
-                                        <Menu.Items className="menu-items">
-                                            <div className="menu-divider">
-                                                {[
-                                                    { src: "/assets/images/flags/us.jpg", label: "English" },
-                                                    // { src: "/assets/images/flags/spain.jpg", label: "Spanish" },
-                                                    // { src: "/assets/images/flags/germany.jpg", label: "German" },
-                                                    // { src: "/assets/images/flags/italy.jpg", label: "Italian" },
-                                                    // { src: "/assets/images/flags/russia.jpg", label: "Russian" }
-                                                ].map((lang, index) => (
-                                                    <Menu.Item key={index}>
-                                                        {({ active }) => (
-                                                            <Link href="#" className={`menu-link language ${active ? 'active' : ''}`}>
-                                                                <img src={lang.src} alt={lang.label} height={12} />
-                                                                <span>{lang.label}</span>
-                                                            </Link>
-                                                        )}
-                                                    </Menu.Item>
-                                                ))}
+                                        {!isAuthenticated && (
+                                            <div>
+                                                <Link href="/login">
+                                                    <Menu.Button className="menu-button login">Login</Menu.Button></Link>
                                             </div>
-                                        </Menu.Items>
+
+                                        )}
                                     </Menu>
                                 </div>
-                                {/* Wallet and User Dropdown */}
                                 {isAuthenticated && (
                                     <>
                                         <div>
                                             {/* Notification Dropdown */}
                                             <Menu as="div" className="menu-container">
-                                                    <Menu.Button className="menu-button relative" onClick={clearNotifications}>
-                                                        <span className="icon-notification" />
-                                                        {hasNewNotification && (
-                                                            <span className="notif-indicator"></span>
-                                                        )}
-                                                    </Menu.Button>
+                                                <Menu.Button className="menu-button relative" onClick={clearNotifications}>
+                                                    <span className="icon-notification" />
+                                                    {hasNewNotification && (
+                                                        <span className="notif-indicator"></span>
+                                                    )}
+                                                </Menu.Button>
                                                 <Menu.Items className="menu-items">
                                                     <div className="menu-divider">
                                                         {/* Notifications News kitco — affichée uniquement s'il y en a */}
@@ -293,7 +221,7 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                                                     <div className="menu-link">
                                                                         <div className="data-info">
                                                                             <h6>📰 Kitco News Updates</h6>
-                                                                            <p>Aucune nouvelle actualité Kitco disponible.</p>
+                                                                            <p>No new Kitco news available.</p>
                                                                         </div>
                                                                     </div>
                                                                 )}
@@ -322,7 +250,7 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                                                     <div className="menu-link">
                                                                         <div className="data-info">
                                                                             <h6>📊 Forex News Updates</h6>
-                                                                            <p>Aucune nouvelle actualité Forex disponible.</p>
+                                                                            <p>No new Forex news available.</p>
                                                                         </div>
                                                                     </div>
                                                                 )}
@@ -353,7 +281,12 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                             <Menu as="div" className="menu-container">
                                                 <div className="wallet">
                                                     <Menu.Button className="menu-button img">
-                                                        <img id="blah" className="wallet-user-profile" src="/assets/images/avt/avt.png" alt="user avatar" />
+                                                        <img
+                                                            id="blah"
+                                                            className="wallet-user-profile"
+                                                            src={profilePicture || defaultAvatar}
+                                                            alt="user avatar"
+                                                        />
                                                         <span className="status-indicator"></span>
                                                     </Menu.Button>
                                                 </div>
@@ -367,22 +300,6 @@ export default function Header1({ scroll, isMobileMenu, handleMobileMenu }) {
                                                                 </Link>
                                                             )}
                                                         </Menu.Item>
-                                                        {/* <Menu.Item>
-                                                            {({ active }) => (
-                                                                <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                                    <i className="bx bx-wallet" />
-                                                                    <span>My Wallet</span>
-                                                                </Link>
-                                                            )}
-                                                        </Menu.Item> */}
-                                                        {/* <Menu.Item>
-                                                        {({ active }) => (
-                                                            <Link href="#" className={`menu-link ${active ? 'active' : ''}`}>
-                                                                <i className="bx bx-wrench" />
-                                                                <span>Settings</span>
-                                                            </Link>
-                                                        )}
-                                                    </Menu.Item> */}
                                                         <div className="menu-divider" />
                                                         <Menu.Item>
                                                             {({ active }) => (

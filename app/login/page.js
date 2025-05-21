@@ -15,6 +15,7 @@ export default function Login() {
     const [password, setPassword] = useState("")
     const [rememberMe, setRememberMe] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [customValidity, setCustomValidity] = useState("")
     const [showPassword, setShowPassword] = useState(false)
 
     const handleSubmit = async (e) => {
@@ -24,22 +25,22 @@ export default function Login() {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/login`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "skip"  },
+                headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "skip" },
                 body: JSON.stringify({ email, password, remember_me: rememberMe })
             })
 
-            
+
             const data = await res.json()
 
             if (res.ok) {
-                login(data) 
-                toast.success("Connexion réussie !")
+                login(data)
+                toast.success("Connection successful!")
                 router.push("/")
             } else {
-                toast.error(data.msg || "Erreur lors de la connexion")
+                toast.error(data.msg || "Connection error")
             }
         } catch (error) {
-            toast.error("Erreur serveur")
+            toast.error("Server error")
         } finally {
             setLoading(false)
         }
@@ -70,7 +71,11 @@ export default function Login() {
                                                     className="form-control"
                                                     placeholder="Please fill in the email form."
                                                     value={email}
-                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    onChange={(e) => {
+                                                        e.target.setCustomValidity(''); // Clear previous message
+                                                        setEmail(e.target.value);
+                                                    }}
+                                                    onInvalid={(e) => e.target.setCustomValidity("Please include an '@' in the email address.")}
                                                     required
                                                 />
                                             </div>
