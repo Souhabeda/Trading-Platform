@@ -7,16 +7,16 @@ import ChatMessage from "./ChatMessage";
 
 
 export default function Chatbot () {
-    const [chatHistory, setChatHistory] = useState([]);
+  const [chatHistory, setChatHistory] = useState([]);
   const [showChatbot, setShowChatbot] = useState(false);
   const chatBodyRef = useRef(null);
 
-  const generateBotResponse = async (history) => {
+    const generateBotResponse = async (history) => {
     const updateHistory = (text, isError = false) => {
-      setChatHistory((prev) =>
-        [...prev.filter((msg) => msg.text !== "Thinking..."),
-         { role: "model", text, isError }]
-      );
+      setChatHistory((prev) => [
+        ...prev.filter((msg) => msg.text !== "Thinking..."),
+        { role: "model", text, isError }
+      ]);
     };
 
     const userMessage = history[history.length - 1].text.toLowerCase().trim();
@@ -41,24 +41,36 @@ export default function Chatbot () {
     }
   };
 
-  // Scroll auto vers le bas après chaque nouveau message
+  // Scroll automatique vers le bas après chaque message
   useEffect(() => {
     if (chatBodyRef.current) {
       chatBodyRef.current.scrollTo({ top: chatBodyRef.current.scrollHeight, behavior: "smooth" });
     }
   }, [chatHistory]);
 
-  // Chargement historique depuis localStorage
+  // Chargement depuis localStorage si moins de 24h
   useEffect(() => {
-    const savedHistory = localStorage.getItem("chatHistory");
-    if (savedHistory) {
-      setChatHistory(JSON.parse(savedHistory));
+    const savedData = localStorage.getItem("chatHistoryData");
+    if (savedData) {
+      const { history, timestamp } = JSON.parse(savedData);
+      const now = Date.now();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+
+      if (now - timestamp < twentyFourHours) {
+        setChatHistory(history);
+      } else {
+        localStorage.removeItem("chatHistoryData"); // données expirées
+      }
     }
   }, []);
 
-  // Sauvegarde de l’historique dans localStorage
+  // Sauvegarde dans localStorage avec timestamp
   useEffect(() => {
-    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+    const dataToSave = {
+      history: chatHistory,
+      timestamp: Date.now()
+    };
+    localStorage.setItem("chatHistoryData", JSON.stringify(dataToSave));
   }, [chatHistory]);
 
   return (

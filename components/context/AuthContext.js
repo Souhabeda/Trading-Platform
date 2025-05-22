@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
   const login = (data) => {
     localStorage.setItem('token', data.token)
     localStorage.setItem("lastLogin", data.last_login)
+    localStorage.removeItem("chatHistoryData"); // <-- Supprime l'historique du chatbot
     setUser({ token: data.token })
   }
   
