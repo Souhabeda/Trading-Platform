@@ -7644,7 +7644,7 @@ body[data-magic-cursor=hide] .mouse-cursor {
     bottom: 90px;
     right: 35px;
     width: 420px;
-    height: 78%;
+    height: 80%;
     transform: scale(0.2);
     overflow: hidden;
     background: #fff;
